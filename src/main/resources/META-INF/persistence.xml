@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.1" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence_2_1.xsd">
+    <persistence-unit name="ASEProjPU" transaction-type="RESOURCE_LOCAL">
+        <!--
+            MAPPINGS
+        -->
+        <class>persisted.Event</class>
+        <class>persisted.RecurrentEvent</class>
+        <!-- Use only classes specified in MAPPINGS -->
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <!-- Configuring JDBC properties -->
+            <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://127.0.0.1:5432/aseproject" />
+            <property name="javax.persistence.jdbc.user" value="aseproject" />
+            <property name="javax.persistence.jdbc.password" value="aseproject" />
+            <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL82Dialect" />
+
+            <!-- Log SQL queries -->
+            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.use_sql_comments" value="true" />
+
+            <!-- Drop and re-create the database schema on startup -->
+            <!--<property name="javax.persistence.schema-generation.database.action" value="drop-and-create" />-->
+            <!-- Use only classes specified in MAPPINGS -->
+            <property name="hibernate.archive.autodetection" value="none" />
+            <property name="hibernate.hbm2ddl.auto" value="update"/>
+        </properties>
+    </persistence-unit>
+</persistence>

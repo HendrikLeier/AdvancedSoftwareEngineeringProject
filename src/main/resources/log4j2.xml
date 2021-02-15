@@ -19,5 +19,9 @@
       <appender-ref ref="fileLogger" level="debug" />
     </Root>
 
+    <logger name="org.hibernate">
+      <level value="ERROR"/>
+    </logger>
+
   </Loggers>
 </Configuration>
