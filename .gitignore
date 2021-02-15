@@ -26,3 +26,6 @@ hs_err_pid*
 .idea
 *.idea
 .gradle
+
+# DB files
+database/postgres_data
