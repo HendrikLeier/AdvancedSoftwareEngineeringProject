@@ -29,3 +29,6 @@ hs_err_pid*
 
 # DB files
 database/postgres_data
+
+# builds
+build
