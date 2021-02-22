@@ -1,9 +1,6 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import persisted.Actor;
-import persisted.Event;
-import persisted.EventType;
-import persisted.RecurrentEvent;
+import persisted.*;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -27,7 +24,12 @@ public class Main {
 
         Random random = new Random();
 
-        Duration duration = Duration.ofDays(30);
+        Set<Duration> intervals = new LinkedHashSet<>();
+
+        intervals.add(Duration.ofDays(4));
+        intervals.add(Duration.ofHours(5));
+
+        RecurrentRule rule = new RecurrentRule(RecurrentRuleReferencePointType.month, intervals);
 
         Actor actor = new Actor();
         actor.setName("The deutsche Sparkasse "+ random.nextInt());
@@ -48,7 +50,7 @@ public class Main {
 
         recurrentEvent.setType(EventType.revenue);
         recurrentEvent.setEventList(eventList);
-        recurrentEvent.setRepetitionIntervall(duration);
+        recurrentEvent.setRule(rule);
         recurrentEvent.setAmount(1500.0);
         recurrentEvent.setName("Monthly income");
         recurrentEvent.setStartPoint(LocalDateTime.now());
@@ -61,6 +63,7 @@ public class Main {
 
         try {
             entityManager.persist(actor);
+            entityManager.persist(rule);
             entityManager.persist(recurrentEvent);
             entityManager.persist(event);
             tx.commit();
