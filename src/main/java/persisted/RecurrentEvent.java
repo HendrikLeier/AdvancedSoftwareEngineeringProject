@@ -1,6 +1,7 @@
 package persisted;
 
 import javax.persistence.*;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,7 +17,7 @@ public class RecurrentEvent {
     private final UUID recurrentEventId;
 
     @Column(nullable = false)
-    private long durationMillis;
+    private Duration repetitionIntervall;
 
     @Column(nullable = false)
     private LocalDateTime startPoint;
@@ -32,16 +33,19 @@ public class RecurrentEvent {
 
     private double amount;
 
+    @ManyToOne(optional = false)
+    private Actor actor;
+
     @OneToMany
     @JoinColumn
     private List<Event> eventList;
 
-    public long getDurationMillis() {
-        return durationMillis;
+    public Duration getRepetitionIntervall() {
+        return repetitionIntervall;
     }
 
-    public void setDurationMillis(long durationMillis) {
-        this.durationMillis = durationMillis;
+    public void setRepetitionIntervall(Duration repetitionIntervall) {
+        this.repetitionIntervall = repetitionIntervall;
     }
 
     public EventType getType() {
@@ -94,5 +98,13 @@ public class RecurrentEvent {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Actor getActor() {
+        return actor;
+    }
+
+    public void setActor(Actor actor) {
+        this.actor = actor;
     }
 }

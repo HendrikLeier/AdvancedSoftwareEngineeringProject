@@ -25,6 +25,9 @@ public class Event {
 
     private double amount;
 
+    @ManyToOne(optional = false)
+    private Actor actor;
+
     public String getName() {
         return name;
     }
@@ -61,4 +64,11 @@ public class Event {
         return eventId;
     }
 
+    public Actor getActor() {
+        return actor;
+    }
+
+    public void setActor(Actor actor) {
+        this.actor = actor;
+    }
 }

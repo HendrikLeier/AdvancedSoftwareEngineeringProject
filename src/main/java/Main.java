@@ -1,5 +1,6 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import persisted.Actor;
 import persisted.Event;
 import persisted.EventType;
 import persisted.RecurrentEvent;
@@ -8,11 +9,9 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 public class Main {
@@ -26,12 +25,21 @@ public class Main {
         final EntityManagerFactory emf =
                 Persistence.createEntityManagerFactory("ASEProjPU");
 
+        Random random = new Random();
+
+        Duration duration = Duration.ofDays(30);
+
+        Actor actor = new Actor();
+        actor.setName("The deutsche Sparkasse "+ random.nextInt());
+        actor.setDescription("Das hier ist die Sparkasse!");
+
         Event event = new Event();
 
         event.setEventType(EventType.revenue);
         event.setName("Sold a car");
         event.setLocalDateTime(LocalDateTime.now());
         event.setAmount(15000.0);
+        event.setActor(actor);
 
         RecurrentEvent recurrentEvent = new RecurrentEvent();
 
@@ -40,17 +48,19 @@ public class Main {
 
         recurrentEvent.setType(EventType.revenue);
         recurrentEvent.setEventList(eventList);
-        recurrentEvent.setDurationMillis(123456789L);
+        recurrentEvent.setRepetitionIntervall(duration);
         recurrentEvent.setAmount(1500.0);
         recurrentEvent.setName("Monthly income");
         recurrentEvent.setStartPoint(LocalDateTime.now());
         recurrentEvent.setEndPoint(LocalDateTime.now());
+        recurrentEvent.setActor(actor);
 
         EntityManager entityManager = emf.createEntityManager();
         EntityTransaction tx = entityManager.getTransaction();
         tx.begin();
 
         try {
+            entityManager.persist(actor);
             entityManager.persist(recurrentEvent);
             entityManager.persist(event);
             tx.commit();
@@ -59,10 +69,6 @@ public class Main {
             logger.error("cannot commit transaction", e);
             tx.rollback();
         }
-
-        Event event1 = entityManager.find(Event.class, UUID.fromString("c0359805-be95-4f66-b111-3d28f41520f1"));
-
-        logger.info("Retrieved Event from " + event1.getLocalDateTime());
 
         entityManager.close();
         emf.close();

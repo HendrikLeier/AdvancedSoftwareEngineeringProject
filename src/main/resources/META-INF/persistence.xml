@@ -6,6 +6,7 @@
         -->
         <class>persisted.Event</class>
         <class>persisted.RecurrentEvent</class>
+        <class>persisted.Actor</class>
         <!-- Use only classes specified in MAPPINGS -->
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
