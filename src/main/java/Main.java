@@ -1,6 +1,7 @@
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import persisted.*;
+import repository.EventRepo;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -65,13 +66,34 @@ public class Main {
             entityManager.persist(actor);
             entityManager.persist(rule);
             entityManager.persist(recurrentEvent);
-            entityManager.persist(event);
             tx.commit();
         }
         catch (Exception e) {
             logger.error("cannot commit transaction", e);
             tx.rollback();
         }
+
+        EventRepo eventRepo = new EventRepo(entityManager);
+
+        if (!eventRepo.createEvent(event)) {
+            logger.warn("Event creation failed!");
+        }
+
+        LocalDateTime dateTime = LocalDateTime.now();
+
+        List<Event> events = eventRepo.getEventsInInterval(dateTime.minus(Duration.ofDays(30)), dateTime);
+
+        logger.info("Number of Events: " + events.size());
+
+        for (Event e : events) {
+            RecurrentEvent parent = e.getRecurrentParent();
+            if (parent != null) {
+                logger.info("Recurrent parent: " + parent);
+                logger.info("Recurrent event name: " + parent.getName());
+                logger.info("Recurrent event Actor: " + parent.getActor().getName());
+            }
+        }
+
 
         entityManager.close();
         emf.close();
