@@ -25,8 +25,11 @@ public class Event {
 
     private double amount;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Actor actor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private RecurrentEvent recurrentParent;
 
     public String getName() {
         return name;
@@ -70,5 +73,13 @@ public class Event {
 
     public void setActor(Actor actor) {
         this.actor = actor;
+    }
+
+    public RecurrentEvent getRecurrentParent() {
+        return recurrentParent;
+    }
+
+    public void setRecurrentParent(RecurrentEvent recurrentParent) {
+        this.recurrentParent = recurrentParent;
     }
 }

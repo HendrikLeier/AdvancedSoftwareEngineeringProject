@@ -32,11 +32,10 @@ public class RecurrentEvent {
 
     private double amount;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Actor actor;
 
-    @OneToMany
-    @JoinColumn
+    @OneToMany(mappedBy = "recurrentParent", fetch = FetchType.LAZY)
     private List<Event> eventList;
 
     public RecurrentRule getRule() {
@@ -69,6 +68,11 @@ public class RecurrentEvent {
 
     public void setEventList(List<Event> eventList) {
         this.eventList = eventList;
+
+        // Bidirectional relationship...
+        for (Event event : eventList) {
+            event.setRecurrentParent(this);
+        }
     }
 
     public UUID getRecurrentEventId() {
