@@ -2,7 +2,7 @@ package persisted;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -36,7 +36,7 @@ public class RecurrentEvent {
     private Actor actor;
 
     @OneToMany(mappedBy = "recurrentParent", fetch = FetchType.LAZY)
-    private List<Event> eventList;
+    private Set<Event> eventList;
 
     public RecurrentRule getRule() {
         return rule;
@@ -62,11 +62,11 @@ public class RecurrentEvent {
         this.amount = amount;
     }
 
-    public List<Event> getEventList() {
+    public Set<Event> getEventList() {
         return eventList;
     }
 
-    public void setEventList(List<Event> eventList) {
+    public void setEventList(Set<Event> eventList) {
         this.eventList = eventList;
 
         // Bidirectional relationship...
