@@ -20,8 +20,7 @@ public class Main {
     {
         logger.debug("starting application....");
 
-        final EntityManagerFactory emf =
-                Persistence.createEntityManagerFactory("ASEProjPU");
+        final EntityManagerFactory emf = PersistenceSingleton.getEntityManagerFactory();
 
         Random random = new Random();
 
