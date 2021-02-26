@@ -19,7 +19,7 @@ PARSER_BEGIN(CQLParser)
 package parser.generated;
 
 import java.util.*;
-import parser.helper.Expr;
+import parser.helper.*;
 /**
  * Simple brace matcher.
  */
@@ -33,14 +33,9 @@ public class CQLParser {
 
     System.out.println();
   }
-  public static void printList(List<String> list) {
-      for (int i = 0; i < list.size(); i++) {
-                System.out.println(list.get(i));
-      }
-   }
+
 
 }
-
 
 PARSER_END(CQLParser)
 
@@ -58,42 +53,30 @@ SKIP : {
 
 Expr FilterLogicOr():
 {
-    Expr expr = new Expr();
+    Expr expr1 = new Expr();
+    Expr expr2 = new Expr();
+    List exprs = new ArrayList();
 }
 {
-    expr.left=FilterLogicAnd() expr.right=FilterLogicOrExt() ["\n"]
-    { return expr; }
-}
-
-void eps() : {}{ {} }
-
-Expr FilterLogicOrExt():
-{
-    Expr expr = new Expr();
-}
-{
-    <or> expr.left=FilterLogicAnd() expr.right=FilterLogicOrExt()
-    { expr.val = "OR"; return expr; }
-    | eps() { return null; }
+    expr1=FilterLogicAnd() (<or> expr2=FilterLogicAnd() { exprs.add(expr2); } )* ["\n"]
+    {
+     exprs.add(expr1);
+     return Utils.handleExprList(exprs, "OR");
+    }
 }
 
 Expr FilterLogicAnd():
 {
-    Expr expr = new Expr();
+    Expr expr1 = new Expr();
+    Expr expr2 = new Expr();
+    List exprs = new ArrayList();
 }
 {
-    expr.left=FilterLogicBaseCase() expr.right=FilterLogicAndExt()
-    {expr.val = "AND"; return expr;}
-}
-
-Expr FilterLogicAndExt():
-{
-    Expr expr = new Expr();
-}
-{
-    <and> expr.left=FilterLogicBaseCase() expr.right=FilterLogicAndExt()
-    {expr.val = "AND"; return expr;}
-    | eps() { return null; }
+    expr1=FilterLogicBaseCase() (<and> expr2=FilterLogicBaseCase() { exprs.add(expr2); })*
+    {
+    exprs.add(expr1);
+    return Utils.handleExprList(exprs, "AND");
+    }
 }
 
 Expr FilterLogicBaseCase(): {
@@ -101,7 +84,7 @@ Expr FilterLogicBaseCase(): {
     Expr expr = new Expr();
 }
 {
-    <lpar> expr.left=FilterLogicOr() <rpar>
+    <lpar> expr=FilterLogicOr() <rpar>
     {
         return expr;
     } | t=<symbol> {
