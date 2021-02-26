@@ -32,3 +32,5 @@ database/postgres_data
 
 # builds
 build
+
+src/main/java/parser/generated
