@@ -1,0 +1,112 @@
+options {
+  OTHER_AMBIGUITY_CHECK = 1;
+  STATIC = true;
+  DEBUG_PARSER = false;
+  DEBUG_LOOKAHEAD = false;
+  DEBUG_TOKEN_MANAGER = false;
+  ERROR_REPORTING = true;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+  IGNORE_CASE = false;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  BUILD_PARSER = true;
+  BUILD_TOKEN_MANAGER = true;
+  SANITY_CHECK = true;
+}
+
+PARSER_BEGIN(CQLParser)
+package parser.generated;
+
+import java.util.*;
+import parser.helper.Expr;
+/**
+ * Simple brace matcher.
+ */
+public class CQLParser {
+
+  /** Main entry point. */
+  public static void main(String args[]) throws ParseException {
+    CQLParser parser = new CQLParser(System.in);
+
+    Expr expr = parser.FilterLogicOr();
+
+    System.out.println();
+  }
+  public static void printList(List<String> list) {
+      for (int i = 0; i < list.size(); i++) {
+                System.out.println(list.get(i));
+      }
+   }
+
+}
+
+
+PARSER_END(CQLParser)
+
+TOKEN : {
+    <and: "and"> |
+    <or: "or"> |
+    <lpar: "("> |
+    <rpar: ")"> |
+    <symbol: (["0"-"9","a"-"z","A"-"Z"])+>
+}
+
+SKIP : {
+    " " | "\t"
+}
+
+Expr FilterLogicOr():
+{
+    Expr expr = new Expr();
+}
+{
+    expr.left=FilterLogicAnd() expr.right=FilterLogicOrExt() ["\n"]
+    { return expr; }
+}
+
+void eps() : {}{ {} }
+
+Expr FilterLogicOrExt():
+{
+    Expr expr = new Expr();
+}
+{
+    <or> expr.left=FilterLogicAnd() expr.right=FilterLogicOrExt()
+    { expr.val = "OR"; return expr; }
+    | eps() { return null; }
+}
+
+Expr FilterLogicAnd():
+{
+    Expr expr = new Expr();
+}
+{
+    expr.left=FilterLogicBaseCase() expr.right=FilterLogicAndExt()
+    {expr.val = "AND"; return expr;}
+}
+
+Expr FilterLogicAndExt():
+{
+    Expr expr = new Expr();
+}
+{
+    <and> expr.left=FilterLogicBaseCase() expr.right=FilterLogicAndExt()
+    {expr.val = "AND"; return expr;}
+    | eps() { return null; }
+}
+
+Expr FilterLogicBaseCase(): {
+    Token t;
+    Expr expr = new Expr();
+}
+{
+    <lpar> expr.left=FilterLogicOr() <rpar>
+    {
+        return expr;
+    } | t=<symbol> {
+                expr.val = t.image;
+                return expr;
+            }
+}
+
