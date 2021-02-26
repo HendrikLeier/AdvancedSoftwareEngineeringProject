@@ -55,7 +55,7 @@ Expr FilterLogicOr():
 {
     Expr expr1 = new Expr();
     Expr expr2 = new Expr();
-    List exprs = new ArrayList();
+    List exprs = new LinkedList();
 }
 {
     expr1=FilterLogicAnd() (<or> expr2=FilterLogicAnd() { exprs.add(expr2); } )* ["\n"]
@@ -69,7 +69,7 @@ Expr FilterLogicAnd():
 {
     Expr expr1 = new Expr();
     Expr expr2 = new Expr();
-    List exprs = new ArrayList();
+    List exprs = new LinkedList();
 }
 {
     expr1=FilterLogicBaseCase() (<and> expr2=FilterLogicBaseCase() { exprs.add(expr2); })*
