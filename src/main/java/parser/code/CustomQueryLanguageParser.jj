@@ -20,19 +20,22 @@ package parser.generated;
 
 import java.util.*;
 import parser.helper.*;
+import parser.querybuilder.*;
+import javax.persistence.criteria.Predicate;
+
 /**
  * Simple brace matcher.
  */
 public class CQLParser {
 
-  /** Main entry point. */
+  /** Main entry point.
   public static void main(String args[]) throws ParseException {
     CQLParser parser = new CQLParser(System.in);
 
     Expr expr = parser.FilterLogicOr();
 
     System.out.println();
-  }
+  }*/
 
 
 }
@@ -44,52 +47,142 @@ TOKEN : {
     <or: "or"> |
     <lpar: "("> |
     <rpar: ")"> |
-    <symbol: (["0"-"9","a"-"z","A"-"Z"])+>
+        /* comparison operators */
+    <equal: "="> |
+    <greater: ">"> |
+    <smaller: "<"> |
+    <between: "between"> /* this is not a binary operator */ |
+    <like: "like"> |
+    <startwith: "startswith"> |
+    <endswith: "endswith"> |
+    <in: "in"> /* requires list specification TODO: implement lists */ |
+    <hasflag:"hasflag"> /* requires flag implementation TODO: implement flags */ |
+    /* data-types */
+    <quote: "\""> : STRING_STATE |
+    <integer: ("-")?["1"-"9"](["0"-"9"])*> |
+    <floatingpoint: ("-")?((["1"-"9"](["0"-"9"])*)|("0"))"."["0"-"9"](["0"-"9"])*(("e"("-")?["1"-"9"](["0"-"9"])*)?)?> |
+    <bool: "true" | "false"> |
+    <datetime: (["0"-"9"]){2}"."(["0"-"9"]){2}"."(["0"-"9"]){4} " " ((["0"-"9"]){2}":"(["0"-"9"]){2})> /* dd.mm.yyyy HH:MM */ |
+    /* fieldnames */
+    <fieldname: ["a"-"z","A"-"Z"](["0"-"9","a"-"z","A"-"Z"])+>
+}
+
+<STRING_STATE> TOKEN : {
+    <endquote: <quote>> : DEFAULT
+   |<CHAR: ~["\"", "\\"]>
+}
+
+<STRING_STATE> MORE : {
+    "\\" : ESC_STATE
+}
+
+<ESC_STATE> TOKEN : {
+    <cntrl_esc: ["\"", "\\", "/", "b", "f", "n", "r", "t"]> : STRING_STATE
 }
 
 SKIP : {
     " " | "\t"
 }
 
-Expr FilterLogicOr():
+Predicate Filter(Filter filter) : {
+    Predicate predicate;
+}{
+    predicate=FilterLogicOr(filter) {return predicate;}
+}
+
+Predicate FilterLogicOr(Filter filter):
 {
-    Expr expr1 = new Expr();
-    Expr expr2 = new Expr();
-    List exprs = new LinkedList();
+    Predicate predicate1;
+    Predicate predicate2;
+    List predicates = new LinkedList();
 }
 {
-    expr1=FilterLogicAnd() (<or> expr2=FilterLogicAnd() { exprs.add(expr2); } )* ["\n"]
+    predicate1=FilterLogicAnd(filter) (<or> predicate2=FilterLogicAnd(filter) { predicates.add(predicate2); } )*
     {
-     exprs.add(expr1);
-     return Utils.handleExprList(exprs, "OR");
+        predicates.add(predicate1);
+        return filter.handlePredicateList(predicates, LogicOperator.Or);
     }
 }
 
-Expr FilterLogicAnd():
+Predicate FilterLogicAnd(Filter filter):
 {
-    Expr expr1 = new Expr();
-    Expr expr2 = new Expr();
-    List exprs = new LinkedList();
+    Predicate predicate1;
+    Predicate predicate2;
+    List predicates = new LinkedList();
 }
 {
-    expr1=FilterLogicBaseCase() (<and> expr2=FilterLogicBaseCase() { exprs.add(expr2); })*
+    predicate1=FilterLogicBaseCase(filter) (<and> predicate2=FilterLogicBaseCase(filter) { predicates.add(predicate2); })*
     {
-    exprs.add(expr1);
-    return Utils.handleExprList(exprs, "AND");
+        predicates.add(predicate1);
+        return filter.handlePredicateList(predicates, LogicOperator.And);
     }
 }
 
-Expr FilterLogicBaseCase(): {
+Predicate FilterLogicBaseCase(Filter filter): {
     Token t;
-    Expr expr = new Expr();
+    Predicate predicate;
+
 }
 {
-    <lpar> expr=FilterLogicOr() <rpar>
+    <lpar> predicate=FilterLogicOr(filter) <rpar>
     {
-        return expr;
-    } | t=<symbol> {
-                expr.val = t.image;
-                return expr;
-            }
+        return predicate;
+    } |
+    predicate=ComparisonExpression(filter)
+    {
+       return predicate;
+    }
 }
 
+Predicate ComparisonExpression(Filter filter): {
+    Token fn;
+    Token cop;
+    Object value;
+}
+{
+    fn=<fieldname> cop=<equal> value=ParseValue()
+    {
+        return Utils.processComparison(fn.image, cop.image, value, filter);
+    }
+}
+
+Object ParseValue(): {
+    Token t;
+    StringBuilder stringBuilder = new StringBuilder();
+} {
+    /* STRING */
+    <quote> (getChar(stringBuilder))* <endquote>
+    {
+        return stringBuilder.toString();
+    } |
+    /* INT */
+    t = <integer>
+    {
+        return Integer.valueOf(t.image);
+    } |
+    t = <floatingpoint>
+    {
+        return Float.valueOf(t.image);
+    } |
+    t = <bool>
+    {
+        return Boolean.valueOf(t.image);
+    } |
+    t = <datetime>
+    {
+        return Utils.parseDateTime(t.image);
+    }
+}
+
+void getChar(StringBuilder builder): {
+    Token t;
+} {
+    t = <CHAR>
+    {
+        builder.append(t.image.charAt(0));
+    } |
+    t = <cntrl_esc>
+    {
+        Utils.convertEscapedCharacter(builder, t.image.charAt(1));
+    }
+}
