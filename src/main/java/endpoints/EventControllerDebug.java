@@ -37,6 +37,8 @@ public class EventControllerDebug {
         final double amount = 5.00;
         final String name = "Aboné";
 
+        String[] classes = new String[]{"a", "b", "c", "d"};
+
         List<Actor> actors = actorRepo.findAll();
 
         Actor actor;
@@ -62,8 +64,8 @@ public class EventControllerDebug {
             recurrentEvent.setActor(actor);
             recurrentEvent.setStartPoint(LocalDateTime.now().minus(Duration.ofMinutes(numberOfMinutes)));
             recurrentEvent.setType(EventType.expenditure);
-            recurrentEvent.setAmount(amount);
-            recurrentEvent.setName(name);
+            recurrentEvent.setAmount(amount + random.nextDouble() * 3);
+            recurrentEvent.setName(classes[random.nextInt(classes.length)]);
             recurrentEvent.setEndPoint(LocalDateTime.now());
 
             Set<Duration> intervals = new LinkedHashSet<>();
@@ -92,8 +94,8 @@ public class EventControllerDebug {
 
             event.setActor(actor);
             event.setEventType(EventType.expenditure);
-            event.setAmount(amount);
-            event.setName(name);
+            event.setAmount(amount + random.nextDouble() * 3);
+            event.setName(classes[random.nextInt(classes.length)]);
             event.setLocalDateTime(current);
             if(withRecurrentParent) { event.setRecurrentParent(recurrentEvent); }
             events.add(event);
