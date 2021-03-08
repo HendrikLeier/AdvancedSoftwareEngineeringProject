@@ -3,18 +3,19 @@ package parser.querybuilder;
 import org.hibernate.cfg.NotYetImplementedException;
 import persisted.Event;
 
+import javax.persistence.Tuple;
 import javax.persistence.criteria.*;
 
 public class ResourceManager {
 
-    public ResourceManager(Root<Event> eventRoot, CriteriaQuery<Event> criteriaQuery, CriteriaBuilder criteriaBuilder) {
+    public ResourceManager(Root<Event> eventRoot, CriteriaQuery<Tuple> criteriaQuery, CriteriaBuilder criteriaBuilder) {
         this.root = eventRoot;
         this.criteriaBuilder = criteriaBuilder;
         this.criteriaQuery = criteriaQuery;
     }
 
     private final Root<Event> root;
-    private final CriteriaQuery<Event> criteriaQuery;
+    private final CriteriaQuery<Tuple> criteriaQuery;
     private final CriteriaBuilder criteriaBuilder;
 
     public <T> Expression<? extends T> getReferencedField(String fieldName) throws FieldException {
@@ -35,7 +36,7 @@ public class ResourceManager {
         return root;
     }
 
-    public CriteriaQuery<Event> getCriteriaQuery() {
+    public CriteriaQuery<Tuple> getCriteriaQuery() {
         return criteriaQuery;
     }
 
@@ -44,6 +45,6 @@ public class ResourceManager {
     }
 
     public void finalizeQuery(Predicate predicate) {
-        criteriaQuery.select(root).where(predicate);
+        criteriaQuery.where(predicate);
     }
 }

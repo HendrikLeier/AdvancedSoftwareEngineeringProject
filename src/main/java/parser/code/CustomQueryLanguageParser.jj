@@ -21,7 +21,7 @@ package parser.generated;
 import java.util.*;
 import parser.helper.*;
 import parser.querybuilder.*;
-import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Expression;import javax.persistence.criteria.Predicate;
 
 /**
  * Simple brace matcher.
@@ -46,12 +46,15 @@ TOKEN : {
     /* Blocks */
     <t_order: "order"> |
     <t_filter: "filter"> |
-    <group: "groups"> |
+    <t_group: "groups"> |
+    <t_result: "results"> |
     /* Logic */
     <and: "and"> |
     <or: "or"> |
     <lpar: "("> |
     <rpar: ")"> |
+    /* Aggregats */
+    <aggregate: "sum" | "avg" | "min" | "max" | "count" > |
     /* Ordering */
     <ascending: "ascending"> |
     <descending: "descending"> |
@@ -99,69 +102,77 @@ SKIP : {
 
 
 
-Predicate Filter(Filter filter) : {
+void Filter(FilterSelector selector) : {
     Predicate predicate;
 }{
-    <t_filter> predicate=FilterLogicOr(filter) {return predicate;}
+    (<t_filter> predicate=SelectorLogicOr(selector) {selector.setFilterPredicate(predicate);})?
 }
 
-Predicate FilterLogicOr(Filter filter):
+Predicate SelectorLogicOr(LogicSelector selector):
 {
     Predicate predicate1;
     Predicate predicate2;
     List predicates = new LinkedList();
 }
 {
-    predicate1=FilterLogicAnd(filter) (<or> predicate2=FilterLogicAnd(filter) { predicates.add(predicate2); } )*
+    predicate1=SelectorLogicAnd(selector) (<or> predicate2=SelectorLogicAnd(selector) { predicates.add(predicate2); } )*
     {
         predicates.add(predicate1);
-        return filter.handlePredicateList(predicates, LogicOperator.Or);
+        return selector.handlePredicateList(predicates, LogicOperator.Or);
     }
 }
 
-Predicate FilterLogicAnd(Filter filter):
+Predicate SelectorLogicAnd(LogicSelector selector):
 {
     Predicate predicate1;
     Predicate predicate2;
     List predicates = new LinkedList();
 }
 {
-    predicate1=FilterLogicBaseCase(filter) (<and> predicate2=FilterLogicBaseCase(filter) { predicates.add(predicate2); })*
+    predicate1=SelectorLogicBaseCase(selector) (<and> predicate2=SelectorLogicBaseCase(selector) { predicates.add(predicate2); })*
     {
         predicates.add(predicate1);
-        return filter.handlePredicateList(predicates, LogicOperator.And);
+        return selector.handlePredicateList(predicates, LogicOperator.And);
     }
 }
 
-Predicate FilterLogicBaseCase(Filter filter): {
+Predicate SelectorLogicBaseCase(LogicSelector selector): {
     Token t;
     Predicate predicate;
 
 }
 {
-    <lpar> predicate=FilterLogicOr(filter) <rpar>
+    <lpar> predicate=SelectorLogicOr(selector) <rpar>
     {
         return predicate;
     } |
-    predicate=ComparisonExpression(filter)
+    predicate=ComparisonExpression(selector)
     {
        return predicate;
     }
 }
 
-Predicate ComparisonExpression(Filter filter): {
+Predicate ComparisonExpression(LogicSelector selector): {
     Token fn;
     Token cop;
     Object value;
     Object value2;
+    String aggregateName = null;
+    Token t_aggregate = null;
 }
 {
-    fn=<fieldname> ((cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain> ) value=ParseValue()
+    ((t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar>) | (fn=<fieldname>))
+    (((cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain> )
+    value=ParseValue()
     {
-        return Utils.processBinaryComparison(fn.image, cop.image, value, filter);
-    } | ( cop=<between> value=ParseValue() <and> value2=ParseValue()
+        if(t_aggregate != null)
+            aggregateName = t_aggregate.image;
+        return Utils.processBinaryComparison(fn.image, aggregateName, cop.image, value, selector);
+    }) | (cop=<between> value=ParseValue() <and> value2=ParseValue()
     {
-    return Utils.processTernaryComparison(fn.image, cop.image, value, value2, filter);
+        if(t_aggregate != null)
+            aggregateName = t_aggregate.image;
+        return Utils.processTernaryComparison(fn.image, aggregateName, cop.image, value, value2, selector);
 }))
 }
 
@@ -210,5 +221,36 @@ void Order(Order order): {
     Token fn;
     Token direction;
 } {
-    <t_order> (fn=<fieldname> (direction=<ascending> | direction=<descending>) {Utils.processOrder(fn.image, direction.image, order);})+
+    (<t_order> (fn=<fieldname> (direction=<ascending> | direction=<descending>) {Utils.processOrder(fn.image, direction.image, order);})+)?
 }
+
+Expression ResultField(ResultField resultField): {
+    Token fn;
+    Token t_aggregate;
+} {
+    t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar> {
+        return resultField.handleResultField(fn.image, t_aggregate.image);
+    } |
+    fn=<fieldname> {
+        return resultField.handleResultField(fn.image, null);
+    }
+}
+
+void Result(Result result, ResultField resultField): {
+   Expression expression;
+}{
+    <t_result> (expression=ResultField(resultField) {result.addResultField(expression);})+
+}
+
+void Group(Group group): {
+    Token t;
+} {
+    (<t_group> (t=<fieldname> {group.addField(t.image);})+ With(group.getWithClauseSelector()))?
+}
+
+void With(WithClauseSelector selector): {
+    Predicate predicate;
+} {
+    (<with> predicate=SelectorLogicOr(selector) {selector.setWithPredicate(predicate);})?
+}
+

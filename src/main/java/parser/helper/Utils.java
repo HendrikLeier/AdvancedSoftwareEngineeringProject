@@ -1,8 +1,7 @@
 package parser.helper;
 
 import parser.generated.ParseException;
-import parser.querybuilder.FieldException;
-import parser.querybuilder.Filter;
+import parser.querybuilder.LogicSelector;
 import parser.querybuilder.Order;
 import parser.querybuilder.OrderType;
 
@@ -55,24 +54,24 @@ public class Utils {
         }
     }
 
-    public static Predicate processBinaryComparison(String fieldName, String comparisonOperator, Object value, Filter filter) throws ParseException {
+    public static Predicate processBinaryComparison(String fieldName, String aggregateName, String comparisonOperator, Object value, LogicSelector filter) throws ParseException {
         switch (comparisonOperator) {
-            case "=": return filter.handleEqualObj(fieldName, value);
-            case ">": return filter.handleGreaterObj(fieldName, value, false);
-            case "<": return filter.handleSmallerObj(fieldName, value, false);
-            case ">=": return filter.handleGreaterObj(fieldName, value, true);
-            case "<=": return filter.handleSmallerObj(fieldName, value, true);
-            case "like": return filter.handleLike(fieldName, value);
-            case "startswith": return filter.handleStartswith(fieldName, value);
-            case "endswith": return filter.handleEndswith(fieldName, value);
-            case "contains": return filter.handleContains(fieldName, value);
+            case "=": return filter.handleEqualObj(fieldName, aggregateName, value);
+            case ">": return filter.handleGreaterObj(fieldName, aggregateName, value, false);
+            case "<": return filter.handleSmallerObj(fieldName, aggregateName, value, false);
+            case ">=": return filter.handleGreaterObj(fieldName, aggregateName, value, true);
+            case "<=": return filter.handleSmallerObj(fieldName, aggregateName, value, true);
+            case "like": return filter.handleLike(fieldName, aggregateName, value);
+            case "startswith": return filter.handleStartswith(fieldName, aggregateName, value);
+            case "endswith": return filter.handleEndswith(fieldName, aggregateName, value);
+            case "contains": return filter.handleContains(fieldName, aggregateName, value);
             default: throw new ParseException("Comparison in unreachable state, check parser!");
         }
     }
 
-    public static Predicate processTernaryComparison(String fieldName, String comparisonOperator, Object value1, Object value2, Filter filter) throws ParseException {
+    public static Predicate processTernaryComparison(String fieldName, String aggregateName, String comparisonOperator, Object value1, Object value2, LogicSelector filter) throws ParseException {
         switch (comparisonOperator) {
-            case "between": return filter.handleBetween(fieldName, value1, value2);
+            case "between": return filter.handleBetween(fieldName, aggregateName, value1, value2);
             default: throw new ParseException("Comparison in unreachable state, check parser!");
         }
     }

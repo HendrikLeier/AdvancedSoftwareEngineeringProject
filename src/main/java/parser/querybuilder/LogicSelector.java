@@ -1,32 +1,38 @@
 package parser.querybuilder;
 
-import org.hibernate.cfg.NotYetImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import persisted.Event;
 
 
 import javax.persistence.criteria.*;
 import java.util.*;
 
-public class Filter {
+public abstract class LogicSelector {
 
-    private static final Logger logger = LoggerFactory.getLogger(Filter.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogicSelector.class);
 
-    private final ResourceManager resourceManager;
+    protected final ResourceManager resourceManager;
 
-    public Filter(ResourceManager resourceManager) {
+    public LogicSelector(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
     }
 
-    /* Binary Operators */
+    protected Predicate filterPredicate;
 
-    public Predicate handleEqualObj(String fieldName, Object value) throws FieldException {
-        return resourceManager.getCriteriaBuilder().equal(resourceManager.getReferencedField(fieldName), value);
+    public void setSelectorPredicate(Predicate filterPredicate) {
+        this.filterPredicate = filterPredicate;
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleGreaterObj(String fieldName, Object value, boolean equal) throws FieldException {
-        Expression<? extends Y> field = resourceManager.getReferencedField(fieldName);
+    public abstract void finalizeSelector();
+
+    /* Binary Operators */
+
+    public Predicate handleEqualObj(String fieldName, String aggregateName, Object value) throws FieldException {
+        return resourceManager.getCriteriaBuilder().equal(getReferencedField(fieldName, aggregateName), value);
+    }
+
+    public <Y extends Comparable<? super Y>> Predicate handleGreaterObj(String fieldName, String aggregateName, Object value, boolean equal) throws FieldException {
+        Expression<? extends Y> field = getReferencedField(fieldName, aggregateName);
 
         if (value instanceof Comparable<?>) {
             Y exp_val = (Y) value;
@@ -43,8 +49,8 @@ public class Filter {
         }
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleSmallerObj(String fieldName, Object value, boolean equal) throws FieldException {
-        Expression<? extends Y> field = resourceManager.getReferencedField(fieldName);
+    public <Y extends Comparable<? super Y>> Predicate handleSmallerObj(String fieldName, String aggregateName, Object value, boolean equal) throws FieldException {
+        Expression<? extends Y> field = getReferencedField(fieldName, aggregateName);
 
         if (value instanceof Comparable<?>) {
             Y expectedValue = (Y) value;
@@ -61,8 +67,8 @@ public class Filter {
         }
     }
 
-    public Predicate handleLike(String fieldName, Object value) throws FieldException {
-        Expression field = resourceManager.getReferencedField(fieldName);
+    public Predicate handleLike(String fieldName, String aggregateName, Object value) throws FieldException {
+        Expression field = getReferencedField(fieldName, aggregateName);
         if (value instanceof String && field.getJavaType() == String.class) {
             return resourceManager.getCriteriaBuilder().like(field, (String) value);
         }else {
@@ -70,8 +76,8 @@ public class Filter {
         }
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleBetween(String fieldName, Object value1, Object value2) throws FieldException {
-        Expression field = resourceManager.getReferencedField(fieldName);
+    public <Y extends Comparable<? super Y>> Predicate handleBetween(String fieldName, String aggregateName, Object value1, Object value2) throws FieldException {
+        Expression field =  getReferencedField(fieldName, aggregateName);
 
         if(value1 instanceof Comparable<?> && value2 instanceof Comparable<?>) {
             Y expectedValue1 = (Y) value1;
@@ -83,25 +89,25 @@ public class Filter {
         }
     }
 
-    public Predicate handleStartswith(String fieldName, Object value) throws FieldException {
+    public Predicate handleStartswith(String fieldName, String aggregateName, Object value) throws FieldException {
         if(value instanceof String) {
-            return handleLike(fieldName, value + "%");
+            return handleLike(fieldName, aggregateName, value + "%");
         }else {
             throw new FieldException("'startswith' can only be used with Strings");
         }
     }
 
-    public Predicate handleEndswith(String fieldName, Object value) throws FieldException {
+    public Predicate handleEndswith(String fieldName, String aggregateName, Object value) throws FieldException {
         if(value instanceof String) {
-            return handleLike(fieldName, "%" + value);
+            return handleLike(fieldName, aggregateName, "%" + value);
         }else {
             throw new FieldException("'endswith' can only be used with Strings");
         }
     }
 
-    public Predicate handleContains(String fieldName, Object value) throws FieldException {
+    public Predicate handleContains(String fieldName, String aggregateName, Object value) throws FieldException {
         if(value instanceof String) {
-            return handleLike(fieldName, "%" + value + "%");
+            return handleLike(fieldName, aggregateName, "%" + value + "%");
         }else {
             throw new FieldException("'endswith' can only be used with Strings");
         }
@@ -122,5 +128,7 @@ public class Filter {
 
         return currPredicate;
     }
+
+    public abstract <X> Expression<? extends X> getReferencedField(String fieldName, String aggregateName) throws FieldException;
 
 }
