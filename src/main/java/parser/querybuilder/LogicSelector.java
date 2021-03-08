@@ -40,7 +40,7 @@ public abstract class LogicSelector {
                 if (!equal)
                     return resourceManager.getCriteriaBuilder().greaterThan(field, exp_val);
                 else
-                    return resourceManager.getCriteriaBuilder().lessThanOrEqualTo(field, exp_val);
+                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(field, exp_val);
             } catch (NumberFormatException e) {
                 throw new FieldException("Wrong value format of value "+value+" for field "+fieldName);
             }
