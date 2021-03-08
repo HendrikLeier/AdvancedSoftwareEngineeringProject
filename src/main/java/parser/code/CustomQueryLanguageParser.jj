@@ -1,0 +1,256 @@
+options {
+  OTHER_AMBIGUITY_CHECK = 1;
+  STATIC = true;
+  DEBUG_PARSER = false;
+  DEBUG_LOOKAHEAD = false;
+  DEBUG_TOKEN_MANAGER = false;
+  ERROR_REPORTING = true;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+  IGNORE_CASE = false;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  BUILD_PARSER = true;
+  BUILD_TOKEN_MANAGER = true;
+  SANITY_CHECK = true;
+}
+
+PARSER_BEGIN(CQLParser)
+package parser.generated;
+
+import java.util.*;
+import parser.helper.*;
+import parser.querybuilder.*;
+import javax.persistence.criteria.Expression;import javax.persistence.criteria.Predicate;
+
+/**
+ * Simple brace matcher.
+ */
+public class CQLParser {
+
+  /** Main entry point.
+  public static void main(String args[]) throws ParseException {
+    CQLParser parser = new CQLParser(System.in);
+
+    Expr expr = parser.FilterLogicOr();
+
+    System.out.println();
+  }*/
+
+
+}
+
+PARSER_END(CQLParser)
+
+TOKEN : {
+    /* Blocks */
+    <t_order: "order"> |
+    <t_filter: "filter"> |
+    <t_group: "groups"> |
+    <t_result: "results"> |
+    /* Logic */
+    <and: "and"> |
+    <or: "or"> |
+    <lpar: "("> |
+    <rpar: ")"> |
+    /* Aggregats */
+    <aggregate: "sum" | "avg" | "min" | "max" | "count" > |
+    /* Ordering */
+    <ascending: "ascending"> |
+    <descending: "descending"> |
+    /* Groups */
+    <with: "with"> |
+    /* comparison operators */
+    <equal: "="> |
+    <greater: ">"> |
+    <greater_eq: ">="> |
+    <smaller_eq: "<="> |
+    <smaller: "<"> |
+    <between: "between"> /* this is not a binary operator */ |
+    <like: "like"> |
+    <startwith: "startswith"> |
+    <endswith: "endswith"> |
+    <contain: "contains"> |
+    <in: "in"> /* requires list specification TODO: implement lists */ |
+    <hasflag:"hasflag"> /* requires flag implementation TODO: implement flags */ |
+    /* data-types */
+    <quote: "\""> : STRING_STATE |
+    <integer: ("-")?["1"-"9"](["0"-"9"])*> |
+    <floatingpoint: ("-")?((["1"-"9"](["0"-"9"])*)|("0"))"."["0"-"9"](["0"-"9"])*(("e"("-")?["1"-"9"](["0"-"9"])*)?)?> |
+    <bool: "true" | "false"> |
+    <datetime: (["0"-"9"]){2}"."(["0"-"9"]){2}"."(["0"-"9"]){4}(" "((["0"-"9"]){2}":"(["0"-"9"]){2}))?> /* dd.mm.yyyy HH:MM */ |
+    /* fieldnames */
+    <fieldname: ["a"-"z","A"-"Z"](["0"-"9","a"-"z","A"-"Z"])+>
+}
+
+<STRING_STATE> TOKEN : {
+    <endquote: <quote>> : DEFAULT
+   |<CHAR: ~["\"", "\\"]>
+}
+
+<STRING_STATE> MORE : {
+    "\\" : ESC_STATE
+}
+
+<ESC_STATE> TOKEN : {
+    <cntrl_esc: ["\"", "\\", "/", "b", "f", "n", "r", "t"]> : STRING_STATE
+}
+
+SKIP : {
+    " " | "\t" | "\n"
+}
+
+
+
+void Filter(FilterSelector selector) : {
+    Predicate predicate;
+}{
+    (<t_filter> predicate=SelectorLogicOr(selector) {selector.setFilterPredicate(predicate);})?
+}
+
+Predicate SelectorLogicOr(LogicSelector selector):
+{
+    Predicate predicate1;
+    Predicate predicate2;
+    List predicates = new LinkedList();
+}
+{
+    predicate1=SelectorLogicAnd(selector) (<or> predicate2=SelectorLogicAnd(selector) { predicates.add(predicate2); } )*
+    {
+        predicates.add(predicate1);
+        return selector.handlePredicateList(predicates, LogicOperator.Or);
+    }
+}
+
+Predicate SelectorLogicAnd(LogicSelector selector):
+{
+    Predicate predicate1;
+    Predicate predicate2;
+    List predicates = new LinkedList();
+}
+{
+    predicate1=SelectorLogicBaseCase(selector) (<and> predicate2=SelectorLogicBaseCase(selector) { predicates.add(predicate2); })*
+    {
+        predicates.add(predicate1);
+        return selector.handlePredicateList(predicates, LogicOperator.And);
+    }
+}
+
+Predicate SelectorLogicBaseCase(LogicSelector selector): {
+    Token t;
+    Predicate predicate;
+
+}
+{
+    <lpar> predicate=SelectorLogicOr(selector) <rpar>
+    {
+        return predicate;
+    } |
+    predicate=ComparisonExpression(selector)
+    {
+       return predicate;
+    }
+}
+
+Predicate ComparisonExpression(LogicSelector selector): {
+    Token fn;
+    Token cop;
+    Object value;
+    Object value2;
+    String aggregateName = null;
+    Token t_aggregate = null;
+}
+{
+    ((t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar>) | (fn=<fieldname>))
+    (((cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain> )
+    value=ParseValue()
+    {
+        if(t_aggregate != null)
+            aggregateName = t_aggregate.image;
+        return Utils.processBinaryComparison(fn.image, aggregateName, cop.image, value, selector);
+    }) | (cop=<between> value=ParseValue() <and> value2=ParseValue()
+    {
+        if(t_aggregate != null)
+            aggregateName = t_aggregate.image;
+        return Utils.processTernaryComparison(fn.image, aggregateName, cop.image, value, value2, selector);
+}))
+}
+
+Object ParseValue(): {
+    Token t;
+    StringBuilder stringBuilder = new StringBuilder();
+} {
+    /* STRING */
+    <quote> (getChar(stringBuilder))* <endquote>
+    {
+        return stringBuilder.toString();
+    } |
+    /* INT */
+    t = <integer>
+    {
+        return Integer.valueOf(t.image);
+    } |
+    t = <floatingpoint>
+    {
+        return Float.valueOf(t.image);
+    } |
+    t = <bool>
+    {
+        return Boolean.valueOf(t.image);
+    } |
+    t = <datetime>
+    {
+        return Utils.parseDateTime(t.image);
+    }
+}
+
+void getChar(StringBuilder builder): {
+    Token t;
+} {
+    t = <CHAR>
+    {
+        builder.append(t.image.charAt(0));
+    } |
+    t = <cntrl_esc>
+    {
+        Utils.convertEscapedCharacter(builder, t.image.charAt(1));
+    }
+}
+
+void Order(Order order): {
+    Token fn;
+    Token direction;
+} {
+    (<t_order> (fn=<fieldname> (direction=<ascending> | direction=<descending>) {Utils.processOrder(fn.image, direction.image, order);})+)?
+}
+
+Expression ResultField(ResultField resultField): {
+    Token fn;
+    Token t_aggregate;
+} {
+    t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar> {
+        return resultField.handleResultField(fn.image, t_aggregate.image);
+    } |
+    fn=<fieldname> {
+        return resultField.handleResultField(fn.image, null);
+    }
+}
+
+void Result(Result result, ResultField resultField): {
+   Expression expression;
+}{
+    <t_result> (expression=ResultField(resultField) {result.addResultField(expression);})+
+}
+
+void Group(Group group): {
+    Token t;
+} {
+    (<t_group> (t=<fieldname> {group.addField(t.image);})+ With(group.getWithClauseSelector()))?
+}
+
+void With(WithClauseSelector selector): {
+    Predicate predicate;
+} {
+    (<with> predicate=SelectorLogicOr(selector) {selector.setWithPredicate(predicate);})?
+}
+

@@ -3,6 +3,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
     id 'war'
+    id "ca.coglinc.javacc" version "2.4.0"
 }
 
 group 'org.example'
@@ -22,11 +23,19 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     // https://mvnrepository.com/artifact/org.modelmapper/modelmapper
     implementation group: 'org.modelmapper', name: 'modelmapper', version: '2.3.8'
+    annotationProcessor group: 'org.hibernate', name: 'hibernate-jpamodelgen', version: '5.4.29.Final'
 
+}
 
-
+compileJavacc {
+    inputDirectory = file(rootDir.absolutePath + '/src/main/java/parser/code')
+    outputDirectory = file(rootDir.absolutePath + '/src/main/java/parser/generated')
 }
 
 test {
     useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-AaddGenerationDate=true']
 }
