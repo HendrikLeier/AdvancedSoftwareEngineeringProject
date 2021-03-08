@@ -5,6 +5,7 @@ import persisted.Event_;
 
 import javax.persistence.metamodel.SingularAttribute;
 
+
 /** Fields that are actually part of the Events Entity */
 public enum SimpleField {
     amount(Event_.amount), datetime(Event_.localDateTime), name(Event_.name), type(Event_.type);

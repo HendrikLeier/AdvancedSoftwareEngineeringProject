@@ -43,18 +43,31 @@ public class CQLParser {
 PARSER_END(CQLParser)
 
 TOKEN : {
+    /* Blocks */
+    <t_order: "order"> |
+    <t_filter: "filter"> |
+    <group: "groups"> |
+    /* Logic */
     <and: "and"> |
     <or: "or"> |
     <lpar: "("> |
     <rpar: ")"> |
-        /* comparison operators */
+    /* Ordering */
+    <ascending: "ascending"> |
+    <descending: "descending"> |
+    /* Groups */
+    <with: "with"> |
+    /* comparison operators */
     <equal: "="> |
     <greater: ">"> |
+    <greater_eq: ">="> |
+    <smaller_eq: "<="> |
     <smaller: "<"> |
     <between: "between"> /* this is not a binary operator */ |
     <like: "like"> |
     <startwith: "startswith"> |
     <endswith: "endswith"> |
+    <contain: "contains"> |
     <in: "in"> /* requires list specification TODO: implement lists */ |
     <hasflag:"hasflag"> /* requires flag implementation TODO: implement flags */ |
     /* data-types */
@@ -62,7 +75,7 @@ TOKEN : {
     <integer: ("-")?["1"-"9"](["0"-"9"])*> |
     <floatingpoint: ("-")?((["1"-"9"](["0"-"9"])*)|("0"))"."["0"-"9"](["0"-"9"])*(("e"("-")?["1"-"9"](["0"-"9"])*)?)?> |
     <bool: "true" | "false"> |
-    <datetime: (["0"-"9"]){2}"."(["0"-"9"]){2}"."(["0"-"9"]){4} " " ((["0"-"9"]){2}":"(["0"-"9"]){2})> /* dd.mm.yyyy HH:MM */ |
+    <datetime: (["0"-"9"]){2}"."(["0"-"9"]){2}"."(["0"-"9"]){4}(" "((["0"-"9"]){2}":"(["0"-"9"]){2}))?> /* dd.mm.yyyy HH:MM */ |
     /* fieldnames */
     <fieldname: ["a"-"z","A"-"Z"](["0"-"9","a"-"z","A"-"Z"])+>
 }
@@ -81,13 +94,15 @@ TOKEN : {
 }
 
 SKIP : {
-    " " | "\t"
+    " " | "\t" | "\n"
 }
+
+
 
 Predicate Filter(Filter filter) : {
     Predicate predicate;
 }{
-    predicate=FilterLogicOr(filter) {return predicate;}
+    <t_filter> predicate=FilterLogicOr(filter) {return predicate;}
 }
 
 Predicate FilterLogicOr(Filter filter):
@@ -138,12 +153,16 @@ Predicate ComparisonExpression(Filter filter): {
     Token fn;
     Token cop;
     Object value;
+    Object value2;
 }
 {
-    fn=<fieldname> cop=<equal> value=ParseValue()
+    fn=<fieldname> ((cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain> ) value=ParseValue()
     {
-        return Utils.processComparison(fn.image, cop.image, value, filter);
-    }
+        return Utils.processBinaryComparison(fn.image, cop.image, value, filter);
+    } | ( cop=<between> value=ParseValue() <and> value2=ParseValue()
+    {
+    return Utils.processTernaryComparison(fn.image, cop.image, value, value2, filter);
+}))
 }
 
 Object ParseValue(): {
@@ -185,4 +204,11 @@ void getChar(StringBuilder builder): {
     {
         Utils.convertEscapedCharacter(builder, t.image.charAt(1));
     }
+}
+
+void Order(Order order): {
+    Token fn;
+    Token direction;
+} {
+    <t_order> (fn=<fieldname> (direction=<ascending> | direction=<descending>) {Utils.processOrder(fn.image, direction.image, order);})+
 }
