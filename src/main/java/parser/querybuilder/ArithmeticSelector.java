@@ -1,0 +1,51 @@
+package parser.querybuilder;
+
+import parser.helper.ArithmeticProdExpression;
+import parser.helper.ArithmeticSumExpression;
+import parser.helper.ProdType;
+import parser.helper.SumType;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Expression;
+
+import java.util.*;
+
+public class ArithmeticSelector {
+
+    public ArithmeticSelector(LogicSelector logicSelector) {
+        this.logicSelector = logicSelector;
+    }
+
+    private final LogicSelector logicSelector;
+
+    public LogicSelector getLogicSelector() {
+        return logicSelector;
+    }
+
+    public Expression<? extends Number> sum(Expression<? extends Number> expression, List<ArithmeticSumExpression> arithmeticSumExpressionList){
+        Expression<? extends Number> previous = expression;
+        for(int i = arithmeticSumExpressionList.size()-1; i >= 0; i--) {
+            ArithmeticSumExpression arithmeticSumExpression = arithmeticSumExpressionList.get(i);
+            if(arithmeticSumExpression.getSumType() == SumType.ADDITION) {
+                previous = logicSelector.getResourceManager().getCriteriaBuilder().sum(previous, (Expression<? extends Number>) arithmeticSumExpression.getExpression());
+            } else if(arithmeticSumExpression.getSumType() == SumType.DIFFERENCE) {
+                previous = logicSelector.getResourceManager().getCriteriaBuilder().diff(previous, (Expression<? extends Number>) arithmeticSumExpression.getExpression());
+            }
+        }
+        return previous;
+    }
+
+    public Expression<? extends Number> prod(Expression<? extends Number> expression, List<ArithmeticProdExpression> arithmeticProdExpressionList) {
+        Expression<? extends Number> previous = expression;
+        for(int i = arithmeticProdExpressionList.size() - 1; i >= 0; i--) {
+            ArithmeticProdExpression arithmeticProdExpression = arithmeticProdExpressionList.get(i);
+            if(arithmeticProdExpression.getProdType() == ProdType.PRODUCT) {
+                previous = logicSelector.getResourceManager().getCriteriaBuilder().prod(previous, (Expression<? extends Number>) arithmeticProdExpression.getExpression());
+            }else if (arithmeticProdExpression.getProdType() == ProdType.QUOTIENT) {
+                previous = logicSelector.getResourceManager().getCriteriaBuilder().quot(previous, (Expression<? extends Number>) arithmeticProdExpression.getExpression());
+            }
+        }
+        return previous;
+    }
+
+}

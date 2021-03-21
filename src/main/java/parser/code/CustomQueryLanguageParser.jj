@@ -21,7 +21,7 @@ package parser.generated;
 import java.util.*;
 import parser.helper.*;
 import parser.querybuilder.*;
-import javax.persistence.criteria.Expression;import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Expression ;import javax.persistence.criteria.Predicate;
 
 /**
  * Simple brace matcher.
@@ -48,6 +48,11 @@ TOKEN : {
     <t_filter: "filter"> |
     <t_group: "groups"> |
     <t_result: "results"> |
+    /* Arithmetic */
+    <plus: "+"> |
+    <minus: "-"> |
+    <prod: "*"> |
+    <quot: "/"> |
     /* Logic */
     <and: "and"> |
     <or: "or"> |
@@ -100,7 +105,7 @@ SKIP : {
     " " | "\t" | "\n"
 }
 
-
+/** TODO: Use generics (refactor to new JavaCC version...) */
 
 void Filter(FilterSelector selector) : {
     Predicate predicate;
@@ -153,27 +158,71 @@ Predicate SelectorLogicBaseCase(LogicSelector selector): {
 }
 
 Predicate ComparisonExpression(LogicSelector selector): {
-    Token fn;
     Token cop;
-    Object value;
-    Object value2;
-    String aggregateName = null;
-    Token t_aggregate = null;
+    Expression expression1;
+    Expression expression2;
+    Expression expression3;
 }
 {
-    ((t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar>) | (fn=<fieldname>))
+    expression1=ParseExpressionSum(selector.getArithmeticSelector())
     (((cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain> )
-    value=ParseValue()
+    expression2=ParseExpressionSum(selector.getArithmeticSelector())
     {
-        if(t_aggregate != null)
-            aggregateName = t_aggregate.image;
-        return Utils.processBinaryComparison(fn.image, aggregateName, cop.image, value, selector);
-    }) | (cop=<between> value=ParseValue() <and> value2=ParseValue()
+        return Utils.processBinaryComparison(expression1, cop.image, expression2, selector);
+    }) | (cop=<between> expression2=ParseExpressionSum(selector.getArithmeticSelector()) <and> expression3=ParseExpressionSum(selector.getArithmeticSelector())
     {
-        if(t_aggregate != null)
+        return Utils.processTernaryComparison(expression1, cop.image, expression2, expression3, selector);
+    }))
+}
+
+Expression ParseExpressionSum(ArithmeticSelector selector): {
+    Expression expression1;
+    Expression expression2;
+    Token t;
+    List sumExpressionList = new LinkedList();
+} {
+    expression1=ParseExpressionProd(selector) ((t=<plus> | t=<minus>) expression2=ParseExpressionProd(selector) {
+        sumExpressionList.add(new ArithmeticSumExpression(expression2, t.image));
+    })*
+    {
+        return selector.sum(expression1, sumExpressionList);
+    }
+}
+
+Expression ParseExpressionProd(ArithmeticSelector selector): {
+    Expression expression1;
+    Expression expression2;
+    Token t;
+    List prodExpressionList = new LinkedList();
+}{
+    expression1=ExpressionBaseCase(selector) ((t=<prod> | t=<quot>) expression2=ExpressionBaseCase(selector) {
+        prodExpressionList.add(new ArithmeticProdExpression(expression2, t.image));
+    })*
+    {
+        return selector.prod(expression1, prodExpressionList);
+    }
+}
+
+Expression ExpressionBaseCase(ArithmeticSelector selector): {
+    Object value;
+    Expression expression;
+    Token fn;
+    Token t_aggregate = null;
+    String aggregateName = null;
+} {
+    <lpar> expression=ParseExpressionSum(selector) <rpar> {
+        return expression;
+    } |
+    value=ParseValue() {
+        /* Make an Expression from the value */
+        return selector.getLogicSelector().getResourceManager().getCriteriaBuilder().literal(value);
+    } |
+    ((t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar>) | (fn=<fieldname>)) {
+        if(t_aggregate != null) {
             aggregateName = t_aggregate.image;
-        return Utils.processTernaryComparison(fn.image, aggregateName, cop.image, value, value2, selector);
-}))
+        }
+        return selector.getLogicSelector().getReferencedField(fn.image, aggregateName);
+    }
 }
 
 Object ParseValue(): {

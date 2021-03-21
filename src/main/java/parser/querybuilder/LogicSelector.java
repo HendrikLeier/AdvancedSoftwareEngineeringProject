@@ -15,9 +15,12 @@ public abstract class LogicSelector {
 
     public LogicSelector(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
+        this.arithmeticSelector = new ArithmeticSelector(this);
     }
 
     protected Predicate filterPredicate;
+
+    protected ArithmeticSelector arithmeticSelector;
 
     public void setSelectorPredicate(Predicate filterPredicate) {
         this.filterPredicate = filterPredicate;
@@ -25,92 +28,63 @@ public abstract class LogicSelector {
 
     public abstract void finalizeSelector();
 
+    public ResourceManager getResourceManager() {
+        return resourceManager;
+    }
+
+    public ArithmeticSelector getArithmeticSelector() {
+        return arithmeticSelector;
+    }
+
     /* Binary Operators */
 
-    public Predicate handleEqualObj(String fieldName, String aggregateName, Object value) throws FieldException {
-        return resourceManager.getCriteriaBuilder().equal(getReferencedField(fieldName, aggregateName), value);
+    public Predicate handleEqualObj(Expression v1, Expression v2) throws FieldException {
+        return resourceManager.getCriteriaBuilder().equal(v1, v2);
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleGreaterObj(String fieldName, String aggregateName, Object value, boolean equal) throws FieldException {
-        Expression<? extends Y> field = getReferencedField(fieldName, aggregateName);
-
-        if (value instanceof Comparable<?>) {
-            Y exp_val = (Y) value;
+    public <Y extends Comparable<? super Y>> Predicate handleGreaterObj(Expression v1, Expression v2, boolean equal) throws FieldException {
             try {
                 if (!equal)
-                    return resourceManager.getCriteriaBuilder().greaterThan(field, exp_val);
+                    return resourceManager.getCriteriaBuilder().greaterThan(v1, v2);
                 else
-                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(field, exp_val);
+                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(v1, v2);
             } catch (NumberFormatException e) {
-                throw new FieldException("Wrong value format of value "+value+" for field "+fieldName);
+                throw new FieldException("Wrong value format of value "+v2+" for field "+v1);
             }
-        } else {
-            throw new FieldException("Value not instanceof Comparable!");
-        }
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleSmallerObj(String fieldName, String aggregateName, Object value, boolean equal) throws FieldException {
-        Expression<? extends Y> field = getReferencedField(fieldName, aggregateName);
+    public <Y extends Comparable<? super Y>> Predicate handleSmallerObj(Expression v1, Expression v2, boolean equal) throws FieldException {
 
-        if (value instanceof Comparable<?>) {
-            Y expectedValue = (Y) value;
             try {
                 if(!equal)
-                    return resourceManager.getCriteriaBuilder().lessThan(field, expectedValue);
+                    return resourceManager.getCriteriaBuilder().lessThan(v1, v2);
                 else
-                    return resourceManager.getCriteriaBuilder().lessThanOrEqualTo(field, expectedValue);
+                    return resourceManager.getCriteriaBuilder().lessThanOrEqualTo(v1, v2);
             } catch (NumberFormatException e) {
-                throw new FieldException("Wrong value format of value "+value+ " with type "+ value.getClass().getTypeName() +" for field "+fieldName + " with type " + field.getJavaType().getTypeName());
+                throw new FieldException("Wrong value format of value "+v1+ " with type "+ v1.getClass().getTypeName() +" for field "+v2 + " with type " + v2.getJavaType().getTypeName());
             }
-        } else {
-            throw new FieldException("Value not instanceof Comparable!");
-        }
     }
 
-    public Predicate handleLike(String fieldName, String aggregateName, Object value) throws FieldException {
-        Expression field = getReferencedField(fieldName, aggregateName);
-        if (value instanceof String && field.getJavaType() == String.class) {
-            return resourceManager.getCriteriaBuilder().like(field, (String) value);
-        }else {
-            throw new FieldException("Value and Field must be of type string to be compared via 'like'");
-        }
+    public Predicate handleLike(Expression v1, Expression v2) throws FieldException {
+        return resourceManager.getCriteriaBuilder().like(v1, v2);
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleBetween(String fieldName, String aggregateName, Object value1, Object value2) throws FieldException {
-        Expression field =  getReferencedField(fieldName, aggregateName);
-
-        if(value1 instanceof Comparable<?> && value2 instanceof Comparable<?>) {
-            Y expectedValue1 = (Y) value1;
-            Y expectedValue2 = (Y) value2;
-
-            return resourceManager.getCriteriaBuilder().between(field, expectedValue1, expectedValue2);
-        }else {
-            throw new FieldException("Values have to be Comparables!");
-        }
+    public <Y extends Comparable<? super Y>> Predicate handleBetween(Expression v1, Expression v2, Expression v3) throws FieldException {
+        return resourceManager.getCriteriaBuilder().between(v1, v2, v3);
     }
 
-    public Predicate handleStartswith(String fieldName, String aggregateName, Object value) throws FieldException {
-        if(value instanceof String) {
-            return handleLike(fieldName, aggregateName, value + "%");
-        }else {
-            throw new FieldException("'startswith' can only be used with Strings");
-        }
+    public Predicate handleStartswith(Expression v1, Expression v2) throws FieldException {
+        return handleLike(v1, this.getResourceManager().getCriteriaBuilder().concat(v2, "%"));
     }
 
-    public Predicate handleEndswith(String fieldName, String aggregateName, Object value) throws FieldException {
-        if(value instanceof String) {
-            return handleLike(fieldName, aggregateName, "%" + value);
-        }else {
-            throw new FieldException("'endswith' can only be used with Strings");
-        }
+    public Predicate handleEndswith(Expression v1, Expression v2) throws FieldException {
+        return handleLike(v1, this.getResourceManager().getCriteriaBuilder().concat("%", v2));
     }
 
-    public Predicate handleContains(String fieldName, String aggregateName, Object value) throws FieldException {
-        if(value instanceof String) {
-            return handleLike(fieldName, aggregateName, "%" + value + "%");
-        }else {
-            throw new FieldException("'endswith' can only be used with Strings");
-        }
+    public Predicate handleContains(Expression v1, Expression v2) throws FieldException {
+        return handleLike(v1, this.getResourceManager().getCriteriaBuilder().concat("%",
+                this.getResourceManager().getCriteriaBuilder().concat(v2, "%")
+        ));
     }
 
     public Predicate handlePredicateList(List<Predicate> predicateList, LogicOperator op) {
