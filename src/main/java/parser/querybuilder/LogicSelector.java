@@ -87,6 +87,10 @@ public abstract class LogicSelector {
         ));
     }
 
+    public Predicate handleBoolean(Expression<Boolean> bool) {
+        return resourceManager.getCriteriaBuilder().isTrue(bool);
+    }
+
     public Predicate handlePredicateList(List<Predicate> predicateList, LogicOperator op) {
         Predicate currPredicate = predicateList.get(0);
         for (int i = 1; i < predicateList.size(); i++) {

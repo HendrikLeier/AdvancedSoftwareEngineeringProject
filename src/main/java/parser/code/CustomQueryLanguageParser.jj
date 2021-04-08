@@ -117,7 +117,7 @@ Predicate SelectorLogicOr(LogicSelector selector):
 {
     Predicate predicate1;
     Predicate predicate2;
-    List predicates = new LinkedList();
+    List<Predicate> predicates = new LinkedList<Predicate>();
 }
 {
     predicate1=SelectorLogicAnd(selector) (<or> predicate2=SelectorLogicAnd(selector) { predicates.add(predicate2); } )*
@@ -131,17 +131,17 @@ Predicate SelectorLogicAnd(LogicSelector selector):
 {
     Predicate predicate1;
     Predicate predicate2;
-    List predicates = new LinkedList();
+    List<Predicate> predicates = new LinkedList<Predicate>();
 }
 {
-    predicate1=SelectorLogicBaseCase(selector) (<and> predicate2=SelectorLogicBaseCase(selector) { predicates.add(predicate2); })*
+    predicate1=SelectorBoolExpression(selector) (<and> predicate2=SelectorBoolExpression(selector) { predicates.add(predicate2); })*
     {
         predicates.add(predicate1);
         return selector.handlePredicateList(predicates, LogicOperator.And);
     }
 }
 
-Predicate SelectorLogicBaseCase(LogicSelector selector): {
+Predicate SelectorBoolExpression(LogicSelector selector): {
     Token t;
     Predicate predicate;
 
@@ -151,37 +151,78 @@ Predicate SelectorLogicBaseCase(LogicSelector selector): {
     {
         return predicate;
     } |
-    predicate=ComparisonExpression(selector)
+    // check the fieldname for boolean type
+    LOOKAHEAD({selector.getResourceManager().isFieldOfType(getToken(1).image, Boolean.class)}) predicate=BoolField(selector) {
+        return predicate;
+    } |
+    predicate=CompExpression(selector)
     {
        return predicate;
     }
+    // Check if this particular token is a boolean field
+
+
 }
 
-Predicate ComparisonExpression(LogicSelector selector): {
+// TODO: implement
+Predicate BoolField(LogicSelector selector):
+{
+    Predicate predicate;
+    Token t;
+}{
+      t=<fieldname> {
+            return selector.handleBoolean(selector.getResourceManager().getReferencedFieldAsType(t.image, Boolean.class));
+      }
+}
+
+Predicate CompExpression(LogicSelector selector): {
     Token cop;
-    Expression expression1;
-    Expression expression2;
-    Expression expression3;
+    Expression<Number> expression1;
+    Expression<Number> expression2;
+    Expression<Number> expression3;
 }
 {
-    expression1=ParseExpressionSum(selector.getArithmeticSelector())
-    (((cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain> )
-    expression2=ParseExpressionSum(selector.getArithmeticSelector())
+    // Numeric stuff
+    expression1=NumericSum(selector.getArithmeticSelector())
+    ((cop=NumCompOperator()
+    expression2=NumericSum(selector.getArithmeticSelector())
     {
         return Utils.processBinaryComparison(expression1, cop.image, expression2, selector);
-    }) | (cop=<between> expression2=ParseExpressionSum(selector.getArithmeticSelector()) <and> expression3=ParseExpressionSum(selector.getArithmeticSelector())
+    }) | (cop=<between> expression2=NumericSum(selector.getArithmeticSelector()) <and> expression3=NumericSum(selector.getArithmeticSelector())
     {
         return Utils.processTernaryComparison(expression1, cop.image, expression2, expression3, selector);
     }))
+    // String stuff (still missing)
+
 }
 
-Expression ParseExpressionSum(ArithmeticSelector selector): {
-    Expression expression1;
-    Expression expression2;
+Token NumCompOperator(): {
+    Token cop;
+}
+{
+    (cop=<equal> | cop=<greater> | cop=<smaller> | cop=<greater_eq> | cop=<smaller_eq> ) {
+        return cop;
+    }
+}
+
+Token StringCompOperator(): {
+    Token cop;
+}
+{
+    (cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain>) {
+        return cop;
+    }
+}
+
+
+
+Expression<Number> NumericSum(ArithmeticSelector selector): {
+    Expression<Number> expression1;
+    Expression<Number> expression2;
     Token t;
-    List sumExpressionList = new LinkedList();
+    List<ArithmeticSumExpression> sumExpressionList = new LinkedList<ArithmeticSumExpression>();
 } {
-    expression1=ParseExpressionProd(selector) ((t=<plus> | t=<minus>) expression2=ParseExpressionProd(selector) {
+    expression1=NumericProd(selector) ((t=<plus> | t=<minus>) expression2=NumericProd(selector) {
         sumExpressionList.add(new ArithmeticSumExpression(expression2, t.image));
     })*
     {
@@ -189,13 +230,13 @@ Expression ParseExpressionSum(ArithmeticSelector selector): {
     }
 }
 
-Expression ParseExpressionProd(ArithmeticSelector selector): {
-    Expression expression1;
-    Expression expression2;
+Expression<Number> NumericProd(ArithmeticSelector selector): {
+    Expression<Number> expression1;
+    Expression<Number> expression2;
     Token t;
-    List prodExpressionList = new LinkedList();
+    List<ArithmeticProdExpression> prodExpressionList = new LinkedList<ArithmeticProdExpression>();
 }{
-    expression1=ExpressionBaseCase(selector) ((t=<prod> | t=<quot>) expression2=ExpressionBaseCase(selector) {
+    expression1=NumericBase(selector) ((t=<prod> | t=<quot>) expression2=NumericBase(selector) {
         prodExpressionList.add(new ArithmeticProdExpression(expression2, t.image));
     })*
     {
@@ -203,14 +244,14 @@ Expression ParseExpressionProd(ArithmeticSelector selector): {
     }
 }
 
-Expression ExpressionBaseCase(ArithmeticSelector selector): {
+Expression<Number> NumericBase(ArithmeticSelector selector): {
     Object value;
-    Expression expression;
+    Expression<Number> expression;
     Token fn;
     Token t_aggregate = null;
     String aggregateName = null;
 } {
-    <lpar> expression=ParseExpressionSum(selector) <rpar> {
+    <lpar> expression=NumericSum(selector) <rpar> {
         return expression;
     } |
     value=ParseValue() {
@@ -223,6 +264,13 @@ Expression ExpressionBaseCase(ArithmeticSelector selector): {
         }
         return selector.getLogicSelector().getReferencedField(fn.image, aggregateName);
     }
+}
+
+// TODO: finish
+Number ParseNumber(): {
+
+}{
+
 }
 
 Object ParseValue(): {

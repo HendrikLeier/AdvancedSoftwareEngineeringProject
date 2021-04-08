@@ -1,6 +1,7 @@
 package persisted;
 
 import javax.persistence.*;
+import javax.ws.rs.DefaultValue;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -27,6 +28,17 @@ public class Event {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Actor actor;
+
+    public Boolean getSomeTestField() {
+        return someTestField;
+    }
+
+    public void setSomeTestField(Boolean someTestField) {
+        this.someTestField = someTestField;
+    }
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean someTestField;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private RecurrentEvent recurrentParent;

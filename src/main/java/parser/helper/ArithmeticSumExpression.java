@@ -9,7 +9,7 @@ import javax.persistence.criteria.Expression;
  */
 public class ArithmeticSumExpression {
 
-    public ArithmeticSumExpression(Expression expression, String token) throws ParseException {
+    public ArithmeticSumExpression(Expression<Number> expression, String token) throws ParseException {
         this.expression = expression;
         if(token.equals("+")) {
             this.sumType = SumType.ADDITION;
@@ -21,10 +21,10 @@ public class ArithmeticSumExpression {
 
     }
 
-    private Expression expression;
-    private SumType sumType;
+    private final Expression<Number> expression;
+    private final SumType sumType;
 
-    public Expression getExpression() {
+    public Expression<Number> getExpression() {
         return expression;
     }
 

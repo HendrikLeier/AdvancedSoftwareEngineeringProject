@@ -9,7 +9,7 @@ import javax.persistence.criteria.Expression;
  */
 public class ArithmeticProdExpression {
 
-    public ArithmeticProdExpression(Expression expression, String token) throws ParseException {
+    public ArithmeticProdExpression(Expression<Number> expression, String token) throws ParseException {
         this.expression = expression;
         if(token.equals("*")) {
             this.prodType = ProdType.PRODUCT;
@@ -20,14 +20,14 @@ public class ArithmeticProdExpression {
         }
     }
 
-    private Expression expression;
-    private ProdType prodType;
+    private final Expression<Number> expression;
+    private final ProdType prodType;
 
     public ProdType getProdType() {
         return prodType;
     }
 
-    public Expression getExpression() {
+    public Expression<Number> getExpression() {
         return expression;
     }
 }
