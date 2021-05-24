@@ -24,7 +24,7 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private EventType type;
 
-    private double amount;
+    private Double amount;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Actor actor;

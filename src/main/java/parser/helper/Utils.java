@@ -55,12 +55,23 @@ public class Utils {
         }
     }
 
-    public static Predicate processBinaryComparison(Expression value1, String comparisonOperator, Expression value2, LogicSelector filter) throws ParseException {
+    public static Predicate processNumericComparison(Expression<Number> value1, String comparisonOperator, Expression<Number> value2, LogicSelector filter) throws ParseException {
         switch (comparisonOperator) {
             case "=": return filter.handleEqualObj(value1, value2);
             case ">": return filter.handleGreaterObj(value1, value2, false);
             case "<": return filter.handleSmallerObj(value1, value2, false);
             case ">=": return filter.handleGreaterObj(value1, value2, true);
+            case "<=": return filter.handleSmallerObj(value1, value2, true);
+            default: throw new ParseException("Numeric comparison in unreachable state, check parser!");
+        }
+    }
+
+    public static Predicate processBinaryComparison(Expression value1, String comparisonOperator, Expression value2, LogicSelector filter) throws ParseException {
+        switch (comparisonOperator) {
+            case "=": return filter.handleEqualObj(value1, value2);
+            // case ">": return filter.handleGreaterObj(value1, value2, false);
+            case "<": return filter.handleSmallerObj(value1, value2, false);
+            // case ">=": return filter.handleGreaterObj(value1, value2, true);
             case "<=": return filter.handleSmallerObj(value1, value2, true);
             case "like": return filter.handleLike(value1, value2);
             case "startswith": return filter.handleStartswith(value1, value2);

@@ -15,10 +15,10 @@ public class Group {
         return withClauseSelector;
     }
 
-    public Group(ResourceManager resourceManager, ResultField resultField) {
+    public Group(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
         this.fields = new LinkedList<>();
-        this.withClauseSelector = new WithClauseSelector(resourceManager, resultField);
+        this.withClauseSelector = new WithClauseSelector(resourceManager);
     }
 
     public void addField(String fieldName) throws FieldException {

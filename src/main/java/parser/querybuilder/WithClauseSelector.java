@@ -5,11 +5,10 @@ import javax.persistence.criteria.Predicate;
 
 public class WithClauseSelector extends LogicSelector {
 
-    private final ResultField resultField;
 
-    public WithClauseSelector(ResourceManager resourceManager, ResultField resultField) {
+    public WithClauseSelector(ResourceManager resourceManager) {
         super(resourceManager);
-        this.resultField = resultField;
+
     }
 
     @Override
@@ -20,8 +19,26 @@ public class WithClauseSelector extends LogicSelector {
     }
 
     @Override
-    public <X> Expression<? extends X> getReferencedField(String fieldName, String aggregateName) throws FieldException {
-        return resultField.handleResultField(fieldName, aggregateName);
+    public <X> Expression<X> getReferencedFieldOfType(String fieldName, Class<X> type) throws FieldException {
+        return this.resourceManager.getReferencedFieldAsType(fieldName, type);
+    }
+
+    @Override
+    public <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) throws FieldException {
+        switch (aggregateName) {
+            case "sum":
+                return resourceManager.getCriteriaBuilder().sum(field.as(Number.class));
+            case "avg":
+                return resourceManager.getCriteriaBuilder().avg(field.as(Number.class)).as(Number.class);
+            case "max":
+                return resourceManager.getCriteriaBuilder().max(field.as(Number.class));
+            case "min":
+                return resourceManager.getCriteriaBuilder().min(field.as(Number.class));
+            case "count":
+                return resourceManager.getCriteriaBuilder().count(field).as(Number.class);
+            default:
+                throw new FieldException("Aggreagte function in impossible state! Check parser!");
+        }
     }
 
     public void setWithPredicate(Predicate predicate) {

@@ -2,6 +2,7 @@ package parser.querybuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import parser.generated.ParseException;
 
 
 import javax.persistence.criteria.*;
@@ -42,12 +43,12 @@ public abstract class LogicSelector {
         return resourceManager.getCriteriaBuilder().equal(v1, v2);
     }
 
-    public <Y extends Comparable<? super Y>> Predicate handleGreaterObj(Expression v1, Expression v2, boolean equal) throws FieldException {
+    public Predicate handleGreaterObj(Expression<Number> v1, Expression<Number> v2, boolean equal) throws FieldException {
             try {
                 if (!equal)
-                    return resourceManager.getCriteriaBuilder().greaterThan(v1, v2);
+                    return resourceManager.getCriteriaBuilder().greaterThan(v1.as(Double.class), v2.as(Double.class));
                 else
-                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(v1, v2);
+                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(v1.as(Double.class), v2.as(Double.class));
             } catch (NumberFormatException e) {
                 throw new FieldException("Wrong value format of value "+v2+" for field "+v1);
             }
@@ -107,6 +108,8 @@ public abstract class LogicSelector {
         return currPredicate;
     }
 
-    public abstract <X> Expression<? extends X> getReferencedField(String fieldName, String aggregateName) throws FieldException;
 
+    public abstract <X> Expression<X> getReferencedFieldOfType(String fieldName, Class<X> type) throws FieldException;
+
+    public abstract <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) throws FieldException, ParseException;
 }

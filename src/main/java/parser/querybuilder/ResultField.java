@@ -10,29 +10,29 @@ public class ResultField {
         this.resourceManager = resourceManager;
     }
 
-    public <X> Expression<? extends X> handleResultField(String fieldName, String aggregateName) throws FieldException {
+    public Expression<?> handleResultField(String fieldName, String aggregateName) throws FieldException {
         Expression<?> field = resourceManager.getReferencedField(fieldName);
-        if(aggregateName != null) {
-            if (!aggregateName.equals("count")) {
+        if (aggregateName != null) {
+            return aggregate(aggregateName, field);
+        }
+        return field;
+    }
 
-                Expression<? extends Number> number_field = (Expression<? extends Number>) field;
-
-                switch (aggregateName) {
-                    case "sum":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().sum(number_field);
-                    case "avg":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().avg(number_field);
-                    case "max":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().max(number_field);
-                    case "min":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().min(number_field);
-                    default:
-                        throw new FieldException("Aggregate Handler in unreachable state, check parser!");
-                }
-            } else {
-                return (Expression<? extends X>) resourceManager.getCriteriaBuilder().count(field);
-            }
-        } else return (Expression<? extends X>) field;
+    private <X> Expression<Number> aggregate(String aggregateName, Expression<X> field) throws FieldException {
+        switch (aggregateName) {
+            case "sum":
+                return resourceManager.getCriteriaBuilder().sum(field.as(Number.class));
+            case "avg":
+                return resourceManager.getCriteriaBuilder().avg(field.as(Number.class)).as(Number.class);
+            case "max":
+                return resourceManager.getCriteriaBuilder().max(field.as(Number.class));
+            case "min":
+                return resourceManager.getCriteriaBuilder().min(field.as(Number.class));
+            case "count":
+                return resourceManager.getCriteriaBuilder().count(field.as(Number.class)).as(Number.class);
+            default:
+                throw new FieldException("aggregate Function in impossible state! Check parser");
+        }
     }
 
 }

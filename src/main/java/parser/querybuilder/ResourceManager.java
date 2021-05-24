@@ -23,40 +23,36 @@ public class ResourceManager {
     private final CriteriaBuilder criteriaBuilder;
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
 
-    /**
-     * This is the non typesafe method, when refactoring is done it can be deleted
-     */
-    public Expression getReferencedField(String fieldName) throws FieldException {
-        SimpleField simpleField = FieldHelper.getSimpleField(fieldName);
-        if (simpleField != null) {
-            return root.get(simpleField.getReferencedField());
-        }else {
-            ForeignField foreignField = FieldHelper.getForeignField(fieldName);
-            if (foreignField != null) {
-                throw new NotYetImplementedException("Foreign Fields are not yet implemented!");
-            }
-        }
 
-        throw new FieldException("Field "+fieldName+" not found!");
+    /**
+     * As it is impossible to determine which field is going to be queried it is impossible to determine the
+     * type of it at compile time. This results in the use of a wildcard. Currently there is no other way in java as typechecking
+     * at runtime is a concept unknown to java.
+     * */
+    public Expression<?> getReferencedField(String fieldName) throws FieldException {
+        SimpleField simpleField = FieldHelper.getSimpleField(fieldName);
+        if(simpleField == null)
+            throw new FieldException("Could not find the fieldname");
+        SingularAttribute<Event, ?> untypedAttribute = simpleField.getReferencedField();
+        return root.get(untypedAttribute);
     }
 
     /**
-     *
      * @param fieldName the name of the field you wish to obtain a Expression-reference on
      * @param targetType The type you need this field as
      * @param <T> The type
      * @return An Expression with the desired type that references the db field
-     * @throws ParseException If the desired field doesn't exist or it's type doesn't match the required one
+     * @throws FieldException If the desired field doesn't exist or it's type doesn't match the required one
      */
-    public <T> Expression<T> getReferencedFieldAsType(String fieldName, Class<T> targetType) throws ParseException {
+    public <T> Expression<T> getReferencedFieldAsType(String fieldName, Class<T> targetType) throws FieldException {
         SimpleField simpleField = FieldHelper.getSimpleField(fieldName);
         if(simpleField == null)
-            throw new ParseException("Could not find the fieldname");
+            throw new FieldException("Could not find the fieldname");
         SingularAttribute<Event, ?> untypedAttribute = simpleField.getReferencedField();
         if(untypedAttribute != null && isFieldOfType(untypedAttribute, targetType)) {
-            // This should be safe as we chcked type compatability before... Check this with the reference documentation tho
+            // This should be safe as we checked type compatability before... Check this with the reference documentation tho
             return root.get(untypedAttribute).as(targetType);
-        } else throw new ParseException("I was unable to obtain a reference to the database object. Most likely something internal broke...");
+        } else throw new FieldException("I was unable to obtain a reference to the database object '"+fieldName+"'. Most likely something internal broke...");
     }
 
     public <T> boolean isFieldOfType(String fieldName, Class<T> type) {
@@ -70,6 +66,7 @@ public class ResourceManager {
         }
         else return false;
     }
+
 
     public <T> boolean isFieldOfType(SingularAttribute<Event,?> field, Class<T> type) {
         if(field == null)

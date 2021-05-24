@@ -56,7 +56,7 @@ public class QueryController {
 
         ResultField resultField = new ResultField(resourceManager);
 
-        Group group = new Group(resourceManager, resultField);
+        Group group = new Group(resourceManager);
 
         CQLParser.Result(result, resultField);
         CQLParser.Filter(filter);
