@@ -24,6 +24,8 @@ import parser.querybuilder.*;
 import javax.persistence.criteria.Expression ;import javax.persistence.criteria.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import parser.querybuilder.ResourceManager;
+import java.time.LocalDateTime;
 /**
  * Simple brace matcher.
  */
@@ -39,6 +41,8 @@ public class CQLParser {
   }*/
 
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
+
+    public static ResourceManager resourceManager;
 }
 
 PARSER_END(CQLParser)
@@ -87,7 +91,8 @@ TOKEN : {
     <bool: "true" | "false"> |
     <datetime: (["0"-"9"]){2}"."(["0"-"9"]){2}"."(["0"-"9"]){4}(" "((["0"-"9"]){2}":"(["0"-"9"]){2}))?> /* dd.mm.yyyy HH:MM */ |
     /* fieldnames */
-    <fieldname: ["a"-"z","A"-"Z"](["0"-"9","a"-"z","A"-"Z"])+>
+    <fieldname: ["a"-"z","A"-"Z"](["0"-"9","a"-"z","A"-"Z"])+> |
+    <t_uuid: (["a"-"f","0"-"9"]){8}"-"(["a"-"f","0"-"9"]){4}"-"(["a"-"f","0"-"9"]){4}"-"(["a"-"f","0"-"9"]){12}>
 }
 
 <STRING_STATE> TOKEN : {
@@ -154,7 +159,7 @@ Predicate SelectorBoolExpression(LogicSelector selector): {
         return predicate;
     } |
     // check the fieldname for boolean type
-    LOOKAHEAD({selector.getResourceManager().isFieldOfType(getToken(1).image, Boolean.class)}) predicate=BoolField(selector) {
+    LOOKAHEAD({resourceManager.isFieldOfType(getToken(1).image, Boolean.class)}) predicate=BoolField(selector) {
         return predicate;
     } |
     predicate=CompExpression(selector)
@@ -179,25 +184,82 @@ Predicate BoolField(LogicSelector selector):
 
 Predicate CompExpression(LogicSelector selector): {
     Token cop;
+    // Numeric
     Expression<Number> expression1;
     Expression<Number> expression2;
     Expression<Number> expression3;
+
+    // String
+    Expression<String> stringExpression1;
+    Expression<String> stringExpression2;
+
+    // Date
+    Expression<LocalDateTime> dateExpression1;
+    Expression<LocalDateTime> dateExpression2;
+
+    // UUID
+    Expression<UUID> uuidExpression1;
+    Expression<UUID> uuidExpression2;
 }
 {
-    // Numeric stuff
-    expression1=NumericSum(selector.getArithmeticSelector())
+    LOOKAHEAD({resourceManager.isFieldOfType(getToken(1).image, String.class) || getToken(1).kind == CQLParserConstants.quote })
+    stringExpression1=ReadString(selector) cop=StringCompOperator() stringExpression2=ReadString(selector) {
+            return Utils.processStringComparison(stringExpression1, cop.image, stringExpression2, selector);
+    } |
+    LOOKAHEAD({resourceManager.isFieldOfType(getToken(1).image, LocalDateTime.class) || getToken(1).kind == CQLParserConstants.datetime })
+    dateExpression1=ReadDate(selector) cop=DateCompOperator() dateExpression2=ReadDate(selector) {
+        return Utils.processDateComparison(dateExpression1, cop.image, dateExpression2, selector);
+    }|
+    LOOKAHEAD({resourceManager.isFieldOfType(getToken(1).image, UUID.class) || getToken(1).kind == CQLParserConstants.t_uuid})
+    uuidExpression1=ReadUUID(selector) cop=UUIDCompOperator() uuidExpression2=ReadUUID(selector){
+        return Utils.processUUIDComparison(uuidExpression1, cop.image, uuidExpression2, selector);
+    } |
+    (expression1=NumericSum(selector.getArithmeticSelector())
     ((cop=NumCompOperator()
     expression2=NumericSum(selector.getArithmeticSelector())
     {
         return Utils.processNumericComparison(expression1, cop.image, expression2, selector);
     })
-
     | (cop=<between> expression2=NumericSum(selector.getArithmeticSelector()) <and> expression3=NumericSum(selector.getArithmeticSelector())
     {
         return Utils.processTernaryComparison(expression1, cop.image, expression2, expression3, selector);
     }))
-    // String stuff (still missing)
+    )
+}
 
+Expression<String> ReadString(LogicSelector selector): {
+    String literal;
+    Expression<String> field;
+} {
+    literal=parseString() {
+        return selector.getResourceManager().getCriteriaBuilder().literal(literal);
+    }
+    | field=FieldStrExpr(selector) {
+        return field;
+    }
+}
+
+Expression<LocalDateTime> ReadDate(LogicSelector selector): {
+    Expression<LocalDateTime> ldtExpr;
+    LocalDateTime ldt;
+} {
+    ldt=ParseLocalDateTime() {
+        return selector.getResourceManager().getCriteriaBuilder().literal(ldt);
+    } | ldtExpr=FieldDateExpr(selector) {
+        return ldtExpr;
+    }
+}
+
+Expression<UUID> ReadUUID(LogicSelector selector): {
+    UUID uuid;
+    Expression<UUID> uuidExpr;
+}{
+    uuid=ParseUUID() {
+        return selector.getResourceManager().getCriteriaBuilder().literal(uuid);
+    } |
+    uuidExpr=FieldUUIDExpr(selector) {
+        return uuidExpr;
+    }
 }
 
 Token NumCompOperator(): {
@@ -213,12 +275,26 @@ Token StringCompOperator(): {
     Token cop;
 }
 {
-    (cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain>) {
+    (cop=<equal> | cop=<like> | cop=<startwith> | cop=<endswith> | cop=<contain>) {
         return cop;
     }
 }
 
+Token DateCompOperator(): {
+    Token cop;
+} {
+    (cop=<equal> | cop=<greater> | cop=<greater_eq> | cop=<smaller_eq> | cop=<smaller>) {
+        return cop;
+    }
+}
 
+Token UUIDCompOperator(): {
+    Token cop;
+} {
+    (cop=<equal> | cop=<greater> | cop=<greater_eq> | cop=<smaller_eq> | cop=<smaller>) {
+        return cop;
+    }
+}
 
 Expression<Number> NumericSum(ArithmeticSelector selector): {
     Expression<Number> expression1;
@@ -278,11 +354,36 @@ Expression<Number> FieldValExpr(ArithmeticSelector selector): {
     ((t_aggregate=<aggregate> <lpar> fn=<fieldname> <rpar>) | (fn=<fieldname>)) {
        if(t_aggregate != null) {
            aggregateName = t_aggregate.image;
-           return selector.getLogicSelector().getAggregateOf(aggregateName, selector.getLogicSelector().getReferencedFieldOfType(fn.image,  Number.class));
+           // This allows all possible field types for aggregation
+           return selector.getLogicSelector().getAggregateOf(aggregateName, selector.getLogicSelector().getReferencedFieldOfType(fn.image,  Object.class));
        }else {
            return selector.getLogicSelector().getReferencedFieldOfType(fn.image,  Number.class);
        }
+    }
 }
+
+Expression<String> FieldStrExpr(LogicSelector selector): {
+    Token fn;
+}{
+    fn=<fieldname> {
+       return selector.getReferencedFieldOfType(fn.image, String.class);
+    }
+}
+
+Expression<LocalDateTime> FieldDateExpr(LogicSelector selector): {
+    Token fn;
+}{
+    fn=<fieldname> {
+       return selector.getReferencedFieldOfType(fn.image, LocalDateTime.class);
+    }
+}
+
+Expression<UUID> FieldUUIDExpr(LogicSelector selector): {
+    Token fn;
+}{
+    fn=<fieldname> {
+       return selector.getReferencedFieldOfType(fn.image, UUID.class);
+    }
 }
 
 Number ParseNumber(): {
@@ -305,31 +406,30 @@ Number ParseNumber(): {
 
 }
 
-Object ParseValue(): {
-    Token t;
+String parseString(): {
     StringBuilder stringBuilder = new StringBuilder();
-} {
-    /* STRING */
+}{
     <quote> (getChar(stringBuilder))* <endquote>
     {
         return stringBuilder.toString();
-    } |
-    /* INT */
-    t = <integer>
-    {
-        return Integer.valueOf(t.image);
-    } |
-    t = <floatingpoint>
-    {
-        return Float.valueOf(t.image);
-    } |
-    t = <bool>
-    {
-        return Boolean.valueOf(t.image);
-    } |
+    }
+}
+
+LocalDateTime ParseLocalDateTime(): {
+    Token t;
+}{
     t = <datetime>
     {
         return Utils.parseDateTime(t.image);
+    }
+}
+
+UUID ParseUUID(): {
+    Token t;
+}{
+    t=<t_uuid>
+    {
+        return UUID.fromString(t.image);
     }
 }
 

@@ -8,7 +8,7 @@ import javax.persistence.metamodel.SingularAttribute;
 
 /** Fields that are actually part of the Events Entity */
 public enum SimpleField {
-    amount(Event_.amount), datetime(Event_.localDateTime), name(Event_.name), type(Event_.type), testBool(Event_.someTestField);
+    amount(Event_.amount), datetime(Event_.localDateTime), name(Event_.name), type(Event_.type), testBool(Event_.someTestField), actor(Event_.actor);
 
     private final SingularAttribute<Event, ?> singularAttribute;
 

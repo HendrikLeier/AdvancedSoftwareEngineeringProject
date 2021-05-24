@@ -43,12 +43,12 @@ public abstract class LogicSelector {
         return resourceManager.getCriteriaBuilder().equal(v1, v2);
     }
 
-    public Predicate handleGreaterObj(Expression<Number> v1, Expression<Number> v2, boolean equal) throws FieldException {
+    public Predicate handleGreaterObj(Expression v1, Expression v2, boolean equal) throws FieldException {
             try {
                 if (!equal)
-                    return resourceManager.getCriteriaBuilder().greaterThan(v1.as(Double.class), v2.as(Double.class));
+                    return resourceManager.getCriteriaBuilder().greaterThan(v1, v2);
                 else
-                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(v1.as(Double.class), v2.as(Double.class));
+                    return resourceManager.getCriteriaBuilder().greaterThanOrEqualTo(v1, v2);
             } catch (NumberFormatException e) {
                 throw new FieldException("Wrong value format of value "+v2+" for field "+v1);
             }

@@ -1,10 +1,13 @@
 package parser.querybuilder;
 
 import javax.persistence.criteria.Expression;
+import java.time.LocalDateTime;
 
 public class ResultField {
 
     private final ResourceManager resourceManager;
+
+    private final static Class[] aggregateNumericGroup = new Class[]{Number.class, LocalDateTime.class};
 
     public ResultField(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
@@ -21,15 +24,27 @@ public class ResultField {
     private <X> Expression<Number> aggregate(String aggregateName, Expression<X> field) throws FieldException {
         switch (aggregateName) {
             case "sum":
-                return resourceManager.getCriteriaBuilder().sum(field.as(Number.class));
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before.
+                    return (Expression<Number>) resourceManager.getCriteriaBuilder().sum((Expression<? extends Number>) field);
+                } else throw new FieldException("Wrong Expression type for sum aggregate");
             case "avg":
-                return resourceManager.getCriteriaBuilder().avg(field.as(Number.class)).as(Number.class);
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before. Just needed some trick to convince java that this can be compiled...
+                    return (Expression<Number>) ((Object) resourceManager.getCriteriaBuilder().avg((Expression<? extends Number>) field));
+                } else throw new FieldException("Wrong Expression type for avg aggregate");
             case "max":
-                return resourceManager.getCriteriaBuilder().max(field.as(Number.class));
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before.
+                    return (Expression<Number>) resourceManager.getCriteriaBuilder().max((Expression<? extends Number>) field);
+                } else throw new FieldException("Wrong Expression type for max aggregate");
             case "min":
-                return resourceManager.getCriteriaBuilder().min(field.as(Number.class));
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before.
+                    return (Expression<Number>) resourceManager.getCriteriaBuilder().min((Expression<? extends Number>) field);
+                } else throw new FieldException("Wrong Expression type for min aggregate");
             case "count":
-                return resourceManager.getCriteriaBuilder().count(field.as(Number.class)).as(Number.class);
+                return resourceManager.getCriteriaBuilder().count(field).as(Number.class);
             default:
                 throw new FieldException("aggregate Function in impossible state! Check parser");
         }

@@ -58,6 +58,8 @@ public class QueryController {
 
         Group group = new Group(resourceManager);
 
+        CQLParser.resourceManager = resourceManager;
+
         CQLParser.Result(result, resultField);
         CQLParser.Filter(filter);
         CQLParser.Order(order);

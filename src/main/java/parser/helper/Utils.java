@@ -66,6 +66,39 @@ public class Utils {
         }
     }
 
+    public static Predicate processStringComparison(Expression<String> value1, String comparisonOperator, Expression<String> value2, LogicSelector filter) throws ParseException {
+        switch (comparisonOperator) {
+            case "=": return filter.handleEqualObj(value1, value2);
+            case "like": return filter.handleLike(value1, value2);
+            case "startswith": return filter.handleStartswith(value1, value2);
+            case "endswith": return filter.handleEndswith(value1, value2);
+            case "contains": return filter.handleContains(value1, value2);
+            default: throw new ParseException("String comparison in unreachable state, check parser!");
+        }
+    }
+
+    public static Predicate processDateComparison(Expression<LocalDateTime> value1, String comparisonOperator, Expression<LocalDateTime> value2, LogicSelector filter) throws ParseException {
+        switch (comparisonOperator) {
+            case "=": return filter.handleEqualObj(value1, value2);
+            case ">": return filter.handleGreaterObj(value1, value2, false);
+            case "<": return filter.handleSmallerObj(value1, value2, false);
+            case ">=": return filter.handleGreaterObj(value1, value2, true);
+            case "<=": return filter.handleSmallerObj(value1, value2, true);
+            default: throw new ParseException("Date comparison in unreachable state, check parser!");
+        }
+    }
+
+    public static Predicate processUUIDComparison(Expression<UUID> value1, String comparisonOperator, Expression<UUID> value2, LogicSelector filter) throws ParseException {
+        switch (comparisonOperator) {
+            case "=": return filter.handleEqualObj(value1, value2);
+            case ">": return filter.handleGreaterObj(value1, value2, false);
+            case "<": return filter.handleSmallerObj(value1, value2, false);
+            case ">=": return filter.handleGreaterObj(value1, value2, true);
+            case "<=": return filter.handleSmallerObj(value1, value2, true);
+            default: throw new ParseException("Date comparison in unreachable state, check parser!");
+        }
+    }
+
     public static Predicate processBinaryComparison(Expression value1, String comparisonOperator, Expression value2, LogicSelector filter) throws ParseException {
         switch (comparisonOperator) {
             case "=": return filter.handleEqualObj(value1, value2);
