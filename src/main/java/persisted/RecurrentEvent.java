@@ -30,7 +30,7 @@ public class RecurrentEvent {
     @Column(nullable = false)
     private String name;
 
-    private double amount;
+    private Double amount;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Actor actor;

@@ -1,38 +1,54 @@
 package parser.querybuilder;
 
 import javax.persistence.criteria.Expression;
+import java.time.LocalDateTime;
 
 public class ResultField {
 
     private final ResourceManager resourceManager;
 
+    private final static Class[] aggregateNumericGroup = new Class[]{Number.class, LocalDateTime.class};
+
     public ResultField(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
     }
 
-    public <X> Expression<? extends X> handleResultField(String fieldName, String aggregateName) throws FieldException {
+    public Expression<?> handleResultField(String fieldName, String aggregateName) throws FieldException {
         Expression<?> field = resourceManager.getReferencedField(fieldName);
-        if(aggregateName != null) {
-            if (!aggregateName.equals("count")) {
+        if (aggregateName != null) {
+            return aggregate(aggregateName, field);
+        }
+        return field;
+    }
 
-                Expression<? extends Number> number_field = (Expression<? extends Number>) field;
-
-                switch (aggregateName) {
-                    case "sum":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().sum(number_field);
-                    case "avg":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().avg(number_field);
-                    case "max":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().max(number_field);
-                    case "min":
-                        return (Expression<? extends X>) resourceManager.getCriteriaBuilder().min(number_field);
-                    default:
-                        throw new FieldException("Aggregate Handler in unreachable state, check parser!");
-                }
-            } else {
-                return (Expression<? extends X>) resourceManager.getCriteriaBuilder().count(field);
-            }
-        } else return (Expression<? extends X>) field;
+    private <X> Expression<Number> aggregate(String aggregateName, Expression<X> field) throws FieldException {
+        switch (aggregateName) {
+            case "sum":
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before.
+                    return (Expression<Number>) resourceManager.getCriteriaBuilder().sum((Expression<? extends Number>) field);
+                } else throw new FieldException("Wrong Expression type for sum aggregate");
+            case "avg":
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before. Just needed some trick to convince java that this can be compiled...
+                    return (Expression<Number>) ((Object) resourceManager.getCriteriaBuilder().avg((Expression<? extends Number>) field));
+                } else throw new FieldException("Wrong Expression type for avg aggregate");
+            case "max":
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before.
+                    return (Expression<Number>) resourceManager.getCriteriaBuilder().max((Expression<? extends Number>) field);
+                } else throw new FieldException("Wrong Expression type for max aggregate");
+            case "min":
+                if (resourceManager.isExpressionOfType(field, aggregateNumericGroup)) {
+                    // 100% type safe as mentioned before.
+                    return (Expression<Number>) resourceManager.getCriteriaBuilder().min((Expression<? extends Number>) field);
+                } else throw new FieldException("Wrong Expression type for min aggregate");
+            case "count":
+                // trust me on this one, the .as() method causes weird queries to the database which involve unresolvable casts... This works.
+                return (Expression<Number>)((Object) resourceManager.getCriteriaBuilder().count(field));
+            default:
+                throw new FieldException("aggregate Function in impossible state! Check parser");
+        }
     }
 
 }
