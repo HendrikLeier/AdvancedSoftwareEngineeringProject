@@ -3,8 +3,8 @@ package parser.querybuilder;
 public class FieldHelper {
 
     /** null means I have none */
-    public static SimpleField getSimpleField(String fieldName) {
-        for (SimpleField f : SimpleField.values()) {
+    public static DataModelField getDataModelField(String fieldName) {
+        for (DataModelField f : DataModelField.values()) {
             if (f.name().equals(fieldName))
                 return f;
         }

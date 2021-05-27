@@ -27,15 +27,15 @@ public class WithClauseSelector extends LogicSelector {
     public <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) throws FieldException {
         switch (aggregateName) {
             case "sum":
-                return resourceManager.getCriteriaBuilder().sum(field.as(Number.class));
+                return resourceManager.getCriteriaBuilder().sum((Expression<Number>) field);
             case "avg":
-                return resourceManager.getCriteriaBuilder().avg(field.as(Number.class)).as(Number.class);
+                return (Expression<Number>) (Object) resourceManager.getCriteriaBuilder().avg((Expression<Number>) field);
             case "max":
-                return resourceManager.getCriteriaBuilder().max(field.as(Number.class));
+                return resourceManager.getCriteriaBuilder().max((Expression<Number>) field);
             case "min":
-                return resourceManager.getCriteriaBuilder().min(field.as(Number.class));
+                return resourceManager.getCriteriaBuilder().min((Expression<Number>) field);
             case "count":
-                return resourceManager.getCriteriaBuilder().count(field).as(Number.class);
+                return (Expression<Number>) (Object) resourceManager.getCriteriaBuilder().count(field);
             default:
                 throw new FieldException("Aggreagte function in impossible state! Check parser!");
         }

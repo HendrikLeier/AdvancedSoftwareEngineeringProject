@@ -44,7 +44,8 @@ public class ResultField {
                     return (Expression<Number>) resourceManager.getCriteriaBuilder().min((Expression<? extends Number>) field);
                 } else throw new FieldException("Wrong Expression type for min aggregate");
             case "count":
-                return resourceManager.getCriteriaBuilder().count(field).as(Number.class);
+                // trust me on this one, the .as() method causes weird queries to the database which involve unresolvable casts... This works.
+                return (Expression<Number>)((Object) resourceManager.getCriteriaBuilder().count(field));
             default:
                 throw new FieldException("aggregate Function in impossible state! Check parser");
         }

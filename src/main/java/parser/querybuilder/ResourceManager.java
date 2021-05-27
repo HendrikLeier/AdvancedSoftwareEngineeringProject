@@ -1,10 +1,9 @@
 package parser.querybuilder;
 
-import org.hibernate.cfg.NotYetImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import parser.generated.ParseException;
 import persisted.Actor;
+import persisted.Actor_;
 import persisted.Event;
 import persisted.EventType;
 
@@ -48,11 +47,55 @@ public class ResourceManager {
      * at runtime is a concept unknown to java.
      * */
     public Expression<?> getReferencedField(String fieldName) throws FieldException {
-        SimpleField simpleField = FieldHelper.getSimpleField(fieldName);
-        if(simpleField == null)
+        DataModelField dataModelField = FieldHelper.getDataModelField(fieldName);
+        if(dataModelField == null)
             throw new FieldException("Could not find the fieldname");
-        SingularAttribute<Event, ?> untypedAttribute = simpleField.getReferencedField();
-        return root.get(untypedAttribute);
+        SingularAttribute<?, ?> untypedAttribute = dataModelField.getReferencedField();
+
+        Join<?, ?> currentFetchResult = null;
+
+        if (dataModelField.requiresFetching()) {
+            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt(), untypedAttribute);
+            currentFetchResult = fetchResolveResult.resultBundle;
+            untypedAttribute = fetchResolveResult.specificAttribute;
+        }
+
+        if(!dataModelField.requiresFetching()) {
+            return root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute);
+        }else {
+            return currentFetchResult.get((SingularAttribute) untypedAttribute);
+        }
+    }
+
+    private class FetchResolveResult {
+        private Join<?,?> resultBundle;
+        private SingularAttribute<?, ?> specificAttribute;
+
+        public FetchResolveResult(Join<?, ?> resultBundle, SingularAttribute<?, ?> specificAttribute) {
+            this.resultBundle = resultBundle;
+            this.specificAttribute = specificAttribute;
+        }
+
+        public Join<?, ?> getResultBundle() {
+            return resultBundle;
+        }
+
+        public SingularAttribute<?, ?> getSpecificAttribute() {
+            return specificAttribute;
+        }
+    }
+
+    private FetchResolveResult resolveReceipt(FetchReceipt fetchReceipt, SingularAttribute<?, ?> initialAttribute) {
+
+        Join<?, ?> currentFetchResult = root.join((SingularAttribute) fetchReceipt.getFetchList().get(0));
+        // Type cannot be determined at compile time...
+        for (int i = 1; i < fetchReceipt.getFetchList().size()-1; i++) {
+            // No type determination at compile time possible.
+            currentFetchResult = currentFetchResult.join((SingularAttribute) fetchReceipt.getFetchList().get(i));
+        }
+        SingularAttribute<?,?> untypedAttribute = fetchReceipt.getFetchList().get(fetchReceipt.getFetchList().size()-1);
+
+        return new FetchResolveResult(currentFetchResult, untypedAttribute);
     }
 
     /**
@@ -63,17 +106,44 @@ public class ResourceManager {
      * @throws FieldException If the desired field doesn't exist or it's type doesn't match the required one
      */
     public <T> Expression<T> getReferencedFieldAsType(String fieldName, Class<T> targetType) throws FieldException {
-        SimpleField simpleField = FieldHelper.getSimpleField(fieldName);
-        if(simpleField == null)
-            throw new FieldException("Could not find the fieldname");
-        SingularAttribute<Event, ?> untypedAttribute = simpleField.getReferencedField();
-        if(untypedAttribute != null && isFieldOfType(untypedAttribute, targetType)) {
-            // This is 100% typesafe as the "isFieldOfType" method validated it. The java compiler is just too fucking dumb to realize it!
+        DataModelField dataModelField = FieldHelper.getDataModelField(fieldName);
+        if(dataModelField == null)
+            throw new FieldException("Could not find the fieldname "+fieldName);
+        SingularAttribute<?, ?> untypedAttribute = dataModelField.getReferencedField();
+        // Recursively fetch if required
+        Join<?, ?> currentFetchResult = null;
 
-            if(!isFieldCastingRequired(untypedAttribute, targetType)) {
-                return (Expression<T>) root.get(untypedAttribute);
+        if (dataModelField.requiresFetching()) {
+            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt(), untypedAttribute);
+            currentFetchResult = fetchResolveResult.resultBundle;
+            untypedAttribute = fetchResolveResult.specificAttribute;
+        }
+
+        /*
+        if (dataModelField.requiresFetching()) {
+            FetchReceipt fetchReceipt = dataModelField.getFetchReceipt();
+            currentFetchResult = root.join((SingularAttribute) fetchReceipt.getFetchList().get(0));
+            // Type cannot be determined at compile time...
+            for (int i = 1; i < fetchReceipt.getFetchList().size()-1; i++) {
+                // No type determination at compile time possible.
+                currentFetchResult = currentFetchResult.join((SingularAttribute) fetchReceipt.getFetchList().get(i));
+            }
+            untypedAttribute = fetchReceipt.getFetchList().get(fetchReceipt.getFetchList().size()-1);
+        }
+         */
+        if(untypedAttribute != null && isFieldOfType(untypedAttribute, targetType)) {
+
+            if(!dataModelField.requiresFetching()) {
+                // This is 100% typesafe as the "isFieldOfType" method validated it. The java compiler is just too fucking dumb to realize it!
+                if (!isFieldCastingRequired(untypedAttribute, targetType)) {
+                    return (Expression<T>) root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute);
+                } else {
+                    return root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute).as(targetType);
+                }
             }else {
-                return root.get(untypedAttribute).as(targetType);
+                // TODO: cehck especially this and also the entire function
+                // Also typesafe
+                return currentFetchResult.get((SingularAttribute) untypedAttribute);
             }
         } else throw new FieldException("I was unable to obtain a reference to the database object '"+fieldName+"'. Most likely something internal broke...");
     }
@@ -87,17 +157,17 @@ public class ResourceManager {
      * */
     public <T> boolean isFieldOfType(String fieldName, Class<T> type) {
         logger.warn("Trying to determine type of "+fieldName);
-        SimpleField simpleField = FieldHelper.getSimpleField(fieldName);
-        if(simpleField == null)
+        DataModelField dataModelField = FieldHelper.getDataModelField(fieldName);
+        if(dataModelField == null)
             return false;
-        SingularAttribute<Event, ?> untypedAttribute = simpleField.getReferencedField();
+        SingularAttribute<Event, ?> untypedAttribute = dataModelField.getReferencedField();
         if(untypedAttribute != null) {
             return isFieldOfType(untypedAttribute, type);
         }
         else return false;
     }
 
-    public <T> boolean isFieldCastingRequired(SingularAttribute<Event,?> field, Class<T> type) {
+    public <T> boolean isFieldCastingRequired(SingularAttribute<?,?> field, Class<T> type) {
         if(field == null)
             return false;
         boolean castingAvoidable = type.isAssignableFrom(field.getJavaType());
@@ -120,7 +190,7 @@ public class ResourceManager {
      * java.lang.Number for a field of type double this function would yield false while a field of java.lang.Double
      * would yield true. If you want to use primitives the easiest way is to convert them to the wrapper classes.
      */
-    public <T> boolean isFieldOfType(SingularAttribute<Event,?> field, Class<T> type) {
+    public <T> boolean isFieldOfType(SingularAttribute<?,?> field, Class<T> type) {
         if(field == null)
             return false;
         logger.warn("Check is "+field.getJavaType().getTypeName() + " >= "+type.getTypeName());
