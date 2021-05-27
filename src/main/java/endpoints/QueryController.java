@@ -1,12 +1,14 @@
 package endpoints;
 
 
+import dto.ParseExceptionDTO;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.handler.AbstractHandlerExceptionResolver;
 import parser.generated.CQLParser;
 import parser.generated.ParseException;
 import parser.querybuilder.*;
@@ -15,6 +17,9 @@ import persisted.Event;
 import javax.persistence.*;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Link;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -24,8 +29,6 @@ import java.util.List;
 @RequestMapping("query")
 public class QueryController {
 
-
-
     @Autowired
     private EntityManager entityManager;
 
@@ -33,6 +36,11 @@ public class QueryController {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @ExceptionHandler(ParseException.class)
+    public ResponseEntity<ParseExceptionDTO> handleParseException(ParseException parseException) {
+        return new ResponseEntity<>(new ParseExceptionDTO("Encountered an exception while parsing the query!", parseException.getMessage()), HttpStatus.BAD_REQUEST);
+    }
 
     @PostMapping("/testQuery")
     public List<List<Object>> testQuery(@RequestBody String query) throws ParseException {

@@ -2,9 +2,7 @@ package parser.querybuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import persisted.Actor_;
-import persisted.Event;
-import persisted.Event_;
+import persisted.*;
 
 import javax.persistence.metamodel.SingularAttribute;
 
@@ -17,16 +15,22 @@ public enum DataModelField {
     type(Event_.type),
     testBool(Event_.someTestField),
     actorId(Event_.actor, new FetchReceipt(Actor_.actorId)),
-    actorName(Event_.actor, new FetchReceipt(Actor_.name));
+    actorName(Event_.actor, new FetchReceipt(Actor_.name)),
+    actorDescription(Event_.actor, new FetchReceipt(Actor_.description)),
+    recurrentRuleType(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.type)),
+    recurrentRuleId(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.ruleUUID)),
+    recurrentRuleReferencePoint(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.referencePointType)),
+    recurrentRuleInterval(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.interval));
 
     private final SingularAttribute<Event, ?> singularAttribute;
 
-    private FetchReceipt fetchReceipt = null;
+    private FetchReceipt fetchReceipt;
 
     DataModelField(SingularAttribute<Event, ?> attribute) {
         this.singularAttribute = attribute;
+        this.fetchReceipt = new FetchReceipt();
+        this.fetchReceipt.emplaceFront(attribute);
     }
-
 
     DataModelField(SingularAttribute<Event, ?> attribute, FetchReceipt fetchReceipt) {
         Logger logger = LoggerFactory.getLogger(DataModelField.class);
@@ -44,7 +48,7 @@ public enum DataModelField {
     }
 
     public boolean requiresFetching() {
-        return this.fetchReceipt != null;
+        return this.fetchReceipt.getFetchList().size() > 1;
     }
 
     public FetchReceipt getFetchReceipt() {

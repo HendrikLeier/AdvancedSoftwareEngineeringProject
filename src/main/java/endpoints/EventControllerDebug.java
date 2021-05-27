@@ -68,10 +68,8 @@ public class EventControllerDebug {
             recurrentEvent.setName(classes[random.nextInt(classes.length)]);
             recurrentEvent.setEndPoint(LocalDateTime.now());
 
-            Set<Duration> intervals = new LinkedHashSet<>();
-            intervals.add(increase);
 
-            RecurrentRule rule = new RecurrentRule(intervals);
+            RecurrentRule rule = new RecurrentRule(increase);
 
             recurrentEvent.setRule(rule);
 

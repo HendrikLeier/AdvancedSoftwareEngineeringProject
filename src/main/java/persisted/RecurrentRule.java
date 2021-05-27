@@ -2,7 +2,6 @@ package persisted;
 
 import javax.persistence.*;
 import java.time.Duration;
-import java.util.Set;
 import java.util.UUID;
 
 // This is a ValueObject
@@ -13,18 +12,18 @@ public class RecurrentRule {
         this.ruleUUID = UUID.randomUUID();
     }
 
-    public RecurrentRule(Set<Duration> intervals) {
+    public RecurrentRule(Duration interval) {
         this();
         this.type = RecurrentRuleType.interval;
         this.referencePointType = null;
-        this.intervals = intervals;
+        this.interval = interval;
     }
 
-    public RecurrentRule(RecurrentRuleReferencePointType referencePointType, Set<Duration> offsets) {
+    public RecurrentRule(RecurrentRuleReferencePointType referencePointType, Duration offset) {
         this();
         this.type = RecurrentRuleType.beginBased;
         this.referencePointType = referencePointType;
-        this.intervals = offsets;
+        this.interval = offset;
     }
 
     // Make this hash generated later
@@ -37,10 +36,7 @@ public class RecurrentRule {
     @Enumerated(EnumType.STRING)
     private RecurrentRuleReferencePointType referencePointType;
 
-    @ElementCollection
-    @CollectionTable(name="interval_sets", joinColumns=@JoinColumn(name="rule_id"))
-    @Column(name="interval")
-    private Set<Duration> intervals;
+    private Duration interval;
 
     public RecurrentRuleType getType() {
         return type;
@@ -50,8 +46,8 @@ public class RecurrentRule {
         return referencePointType;
     }
 
-    public Set<Duration> getIntervals() {
-        return intervals;
+    public Duration getInterval() {
+        return interval;
     }
 
     public UUID getRuleUUID() {

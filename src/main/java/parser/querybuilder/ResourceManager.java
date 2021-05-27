@@ -2,43 +2,83 @@ package parser.querybuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import persisted.Actor;
-import persisted.Actor_;
-import persisted.Event;
-import persisted.EventType;
+import persisted.*;
 
 import javax.persistence.Tuple;
 import javax.persistence.criteria.*;
 import javax.persistence.metamodel.SingularAttribute;
-import java.util.HashMap;
-import java.util.UUID;
+import java.time.Duration;
+import java.util.*;
 
+/**
+ * Takes care of acquiring references to the corresponding database resources
+ * This includes initial resolving of paths (joins, selects...) as well as caching them for performance reasons
+ */
 public class ResourceManager {
 
     public ResourceManager(Root<Event> eventRoot, CriteriaQuery<Tuple> criteriaQuery, CriteriaBuilder criteriaBuilder) {
         this.root = eventRoot;
         this.criteriaBuilder = criteriaBuilder;
         this.criteriaQuery = criteriaQuery;
+        /*
+         * The Maps used for caching (tree-maps should be most efficient for the amounts of data)
+         */
+        this.sourceCache = new TreeMap<>();
+        this.fieldCache = new TreeMap<>();
     }
 
     private final Root<Event> root;
     private final CriteriaQuery<Tuple> criteriaQuery;
     private final CriteriaBuilder criteriaBuilder;
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
+
+    private final Map<FetchReceipt, FetchResolveResult> sourceCache;
+    private final Map<FetchReceipt, Expression<?>> fieldCache;
+
     /**
      * Type mappings for referenced classes
-     *
-     * TODO: ad other direction to hash map
-     * */
-    private final HashMap<Class, Class> classClassHashMap = new HashMap<>()
+     * --> Target classes for some types
+     */
+    private static final HashMap<Class, Class> classClassHashMap = new HashMap<>()
             {{
                 put(persisted.RecurrentEvent.class, UUID.class);
                 put(EventType.class, String.class);
                 put(Actor.class, UUID.class);
+                put(RecurrentRuleType.class, String.class);
+                put(RecurrentRuleReferencePointType.class, String.class);
+                put(Duration.class, Long.class);
             }};
 
+    /**
+     * @param field The class to be checked
+     * @return Either the target class or the input class
+     */
     private Class<?> replaceClass(Class<?> field) {
         return classClassHashMap.getOrDefault(field, field);
+    }
+
+    /**
+     * A method that resolves fields that require joins to accessed
+     * As a general rule only left joins are used, as inner joins would discard all tuples that don't match
+     * and right joins as well as outer joins make no sense at all
+     * @param fetchReceipt The FetchReceipt that describes the path to the attribute
+     * @return The FetchResolveResult
+     */
+    private FetchResolveResult resolveReceipt(FetchReceipt fetchReceipt) {
+        if(!sourceCache.containsKey(fetchReceipt)) {
+            Join<?, ?> currentFetchResult = root.join((SingularAttribute) fetchReceipt.getFetchList().get(0), JoinType.LEFT);
+            // Type cannot be determined at compile time...
+            for (int i = 1; i < fetchReceipt.getFetchList().size() - 1; i++) {
+                // No type determination at compile time possible.
+                currentFetchResult = currentFetchResult.join((SingularAttribute) fetchReceipt.getFetchList().get(i), JoinType.LEFT);
+            }
+            SingularAttribute<?, ?> untypedAttribute = fetchReceipt.getFetchList().get(fetchReceipt.getFetchList().size() - 1);
+
+            FetchResolveResult fetchResolveResult = new FetchResolveResult(currentFetchResult, untypedAttribute);
+            sourceCache.put(fetchReceipt, fetchResolveResult);
+
+            return fetchResolveResult;
+        } else return sourceCache.get(fetchReceipt);
     }
 
     /**
@@ -55,21 +95,58 @@ public class ResourceManager {
         Join<?, ?> currentFetchResult = null;
 
         if (dataModelField.requiresFetching()) {
-            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt(), untypedAttribute);
+            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt());
             currentFetchResult = fetchResolveResult.resultBundle;
             untypedAttribute = fetchResolveResult.specificAttribute;
         }
+        Class<?> targetClass = replaceClass(untypedAttribute.getJavaType());
 
-        if(!dataModelField.requiresFetching()) {
-            return root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute);
+        Expression<?> result = getField(dataModelField, untypedAttribute, currentFetchResult);
+
+        if (targetClass == untypedAttribute.getJavaType()) {
+            return result;
         }else {
-            return currentFetchResult.get((SingularAttribute) untypedAttribute);
+            return result.as(targetClass);
         }
+
     }
 
-    private class FetchResolveResult {
-        private Join<?,?> resultBundle;
-        private SingularAttribute<?, ?> specificAttribute;
+    /**
+     * This class is there cause I didn't want to write this twice...
+     * @param dataModelField The DataModelField object for the desired field
+     * @param untypedAttribute The Singular attribute referencing the database object
+     * @param currentFetchResult The current join result (either cached or calculated)
+     * @return The Expression
+     */
+    private Expression<?> getField(DataModelField dataModelField, SingularAttribute<?,?> untypedAttribute, Join<?,?> currentFetchResult) {
+        Expression<?> result;
+        if(!fieldCache.containsKey(dataModelField.getFetchReceipt())) {
+            if (!dataModelField.requiresFetching()) {
+                result = root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute);
+            } else {
+                result = currentFetchResult.get((SingularAttribute) untypedAttribute);
+            }
+            /* Cache for query optimization */
+            fieldCache.put(dataModelField.getFetchReceipt(), result);
+        } else {
+            result = fieldCache.get(dataModelField.getFetchReceipt());
+        }
+
+        return result;
+    }
+
+    /**
+     * A class which is used to store fetch results
+     */
+    private static class FetchResolveResult {
+        /**
+         * A variable used to store the Join-object which contains the attribute
+         */
+        private final Join<?,?> resultBundle;
+        /**
+         * The SingulareAttribute that is part of the Join-object and contains the field reference
+         */
+        private final SingularAttribute<?, ?> specificAttribute;
 
         public FetchResolveResult(Join<?, ?> resultBundle, SingularAttribute<?, ?> specificAttribute) {
             this.resultBundle = resultBundle;
@@ -83,19 +160,6 @@ public class ResourceManager {
         public SingularAttribute<?, ?> getSpecificAttribute() {
             return specificAttribute;
         }
-    }
-
-    private FetchResolveResult resolveReceipt(FetchReceipt fetchReceipt, SingularAttribute<?, ?> initialAttribute) {
-
-        Join<?, ?> currentFetchResult = root.join((SingularAttribute) fetchReceipt.getFetchList().get(0));
-        // Type cannot be determined at compile time...
-        for (int i = 1; i < fetchReceipt.getFetchList().size()-1; i++) {
-            // No type determination at compile time possible.
-            currentFetchResult = currentFetchResult.join((SingularAttribute) fetchReceipt.getFetchList().get(i));
-        }
-        SingularAttribute<?,?> untypedAttribute = fetchReceipt.getFetchList().get(fetchReceipt.getFetchList().size()-1);
-
-        return new FetchResolveResult(currentFetchResult, untypedAttribute);
     }
 
     /**
@@ -114,37 +178,21 @@ public class ResourceManager {
         Join<?, ?> currentFetchResult = null;
 
         if (dataModelField.requiresFetching()) {
-            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt(), untypedAttribute);
+            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt());
             currentFetchResult = fetchResolveResult.resultBundle;
             untypedAttribute = fetchResolveResult.specificAttribute;
         }
 
-        /*
-        if (dataModelField.requiresFetching()) {
-            FetchReceipt fetchReceipt = dataModelField.getFetchReceipt();
-            currentFetchResult = root.join((SingularAttribute) fetchReceipt.getFetchList().get(0));
-            // Type cannot be determined at compile time...
-            for (int i = 1; i < fetchReceipt.getFetchList().size()-1; i++) {
-                // No type determination at compile time possible.
-                currentFetchResult = currentFetchResult.join((SingularAttribute) fetchReceipt.getFetchList().get(i));
-            }
-            untypedAttribute = fetchReceipt.getFetchList().get(fetchReceipt.getFetchList().size()-1);
-        }
-         */
         if(untypedAttribute != null && isFieldOfType(untypedAttribute, targetType)) {
 
-            if(!dataModelField.requiresFetching()) {
-                // This is 100% typesafe as the "isFieldOfType" method validated it. The java compiler is just too fucking dumb to realize it!
-                if (!isFieldCastingRequired(untypedAttribute, targetType)) {
-                    return (Expression<T>) root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute);
-                } else {
-                    return root.get((SingularAttribute<? super Event, ? extends Object>) untypedAttribute).as(targetType);
-                }
-            }else {
-                // TODO: cehck especially this and also the entire function
-                // Also typesafe
-                return currentFetchResult.get((SingularAttribute) untypedAttribute);
+            Expression<?> result = getField(dataModelField, untypedAttribute, currentFetchResult);
+            // This is 100% typesafe as the "isFieldOfType" method validated it. The java compiler is just too fucking dumb to realize it!
+            if (!isFieldCastingRequired(untypedAttribute, targetType)) {
+                return (Expression<T>) result;
+            } else {
+                return result.as(targetType);
             }
+
         } else throw new FieldException("I was unable to obtain a reference to the database object '"+fieldName+"'. Most likely something internal broke...");
     }
 
@@ -156,23 +204,34 @@ public class ResourceManager {
      * @return true if so false if not
      * */
     public <T> boolean isFieldOfType(String fieldName, Class<T> type) {
-        logger.warn("Trying to determine type of "+fieldName);
+        logger.debug("Trying to determine type of "+fieldName);
         DataModelField dataModelField = FieldHelper.getDataModelField(fieldName);
         if(dataModelField == null)
             return false;
-        SingularAttribute<Event, ?> untypedAttribute = dataModelField.getReferencedField();
+        SingularAttribute<?, ?> untypedAttribute = dataModelField.getReferencedField();
+        if (dataModelField.requiresFetching()) {
+            FetchResolveResult fetchResolveResult = resolveReceipt(dataModelField.getFetchReceipt());
+            untypedAttribute = fetchResolveResult.specificAttribute;
+        }
+
         if(untypedAttribute != null) {
             return isFieldOfType(untypedAttribute, type);
         }
         else return false;
     }
 
+    /**
+     * Method that determines if casting is necessary before returning
+     * @param field The field you wanna check
+     * @param type The type you wanna check for
+     * @return True if casting is necessary, False if not
+     */
     public <T> boolean isFieldCastingRequired(SingularAttribute<?,?> field, Class<T> type) {
         if(field == null)
             return false;
         boolean castingAvoidable = type.isAssignableFrom(field.getJavaType());
         if (!castingAvoidable) {
-            logger.warn("Casting required for "+field.getJavaType().getTypeName());
+            logger.debug("Casting required for "+field.getJavaType().getTypeName());
         }
         return !castingAvoidable;
     }
@@ -193,18 +252,30 @@ public class ResourceManager {
     public <T> boolean isFieldOfType(SingularAttribute<?,?> field, Class<T> type) {
         if(field == null)
             return false;
-        logger.warn("Check is "+field.getJavaType().getTypeName() + " >= "+type.getTypeName());
+        logger.debug("Check is "+field.getJavaType().getTypeName() + " >= "+type.getTypeName());
         boolean result = type.isAssignableFrom(replaceClass(field.getJavaType()));
-        logger.warn("Check resulted in "+result);
+        logger.debug("Check resulted in "+result);
         return result;
     }
 
+    /**
+     * Checks if the type of the Expression is a 'descendant' of a type
+     * @param field The field you wanna check
+     * @param type The type you wanna check for
+     * @return True if the type is related, False if not
+     */
     public <T> boolean isExpressionOfType(Expression<?> field, Class<T> type) {
         if(field == null)
             return false;
         return type.isAssignableFrom(field.getJavaType());
     }
 
+    /**
+     * Same method as above just with list of types
+     * @param field The field you wanna check
+     * @param classes The types you wanna check for
+     * @return True if one of the types is related, False if not
+     */
     public boolean isExpressionOfType(Expression<?> field, Class[] classes) {
         for (Class c : classes) {
             if(isExpressionOfType(field, c)) {
@@ -224,9 +295,5 @@ public class ResourceManager {
 
     public CriteriaBuilder getCriteriaBuilder() {
         return criteriaBuilder;
-    }
-
-    public void finalizeQuery(Predicate predicate) {
-        criteriaQuery.where(predicate);
     }
 }

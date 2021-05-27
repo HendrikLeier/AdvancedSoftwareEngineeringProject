@@ -18,7 +18,7 @@ options {
 PARSER_BEGIN(CQLParser)
 package parser.generated;
 
-import java.util.*;
+import java.math.BigInteger;import java.util.*;
 import parser.helper.*;
 import parser.querybuilder.*;
 import javax.persistence.criteria.Expression ;import javax.persistence.criteria.Predicate;
@@ -92,6 +92,8 @@ TOKEN : {
     <bool: "true" | "false"> |
     <datetime: (["0"-"9"]){2}"."(["0"-"9"]){2}"."(["0"-"9"]){4}(" "((["0"-"9"]){2}":"(["0"-"9"]){2}))?> /* dd.mm.yyyy HH:MM */ |
     <uuid_denoter: "uuid"> |
+    <str_denoter: "str"> |
+    <null_: "null"> |
     <t_uuid: (["a"-"f","0"-"9"]){8}"-"(["a"-"f","0"-"9"]){4}"-"(["a"-"f","0"-"9"]){4}"-"(["a"-"f","0"-"9"]){4}"-"(["a"-"f","0"-"9"]){12}> |
     /* fieldnames */
     <fieldname: ["a"-"z","A"-"Z"](["0"-"9","a"-"z","A"-"Z"])+>
@@ -155,7 +157,7 @@ Predicate NegatableBoolExpression(LogicSelector selector):
 {
     Predicate predicate;
 }{
-    <not> <lpar> predicate=SelectorBoolExpression(selector) <rpar>
+    <not> predicate=SelectorBoolExpression(selector)
     {
         return selector.getResourceManager().getCriteriaBuilder().not(predicate);
     } |
@@ -220,7 +222,7 @@ Predicate CompExpression(LogicSelector selector): {
     Expression<UUID> uuidExpression2;
 }
 {
-    LOOKAHEAD({resourceManager.isFieldOfType(getToken(1).image, String.class) || getToken(1).kind == CQLParserConstants.quote })
+    LOOKAHEAD({resourceManager.isFieldOfType(getToken(1).image, String.class) || getToken(1).kind == CQLParserConstants.quote || getToken(1).kind == CQLParserConstants.str_denoter})
     stringExpression1=ReadString(selector) cop=StringCompOperator() stringExpression2=ReadString(selector) {
             return Utils.processStringComparison(stringExpression1, cop.image, stringExpression2, selector);
     } |
@@ -251,9 +253,10 @@ Expression<String> ReadString(LogicSelector selector): {
 } {
     literal=parseString() {
         return selector.getResourceManager().getCriteriaBuilder().literal(literal);
-    }
-    | field=FieldStrExpr(selector) {
+    } | field=FieldStrExpr(selector) {
         return field;
+    } | <str_denoter> <lpar> <null_> <rpar> {
+        return selector.getResourceManager().getCriteriaBuilder().nullLiteral(String.class);
     }
 }
 
@@ -272,10 +275,12 @@ Expression<UUID> ReadUUID(LogicSelector selector): {
     UUID uuid;
     Expression<UUID> uuidExpr;
 }{
-    uuid=ParseUUID() {
+    LOOKAHEAD({getToken(3).kind == CQLParserConstants.t_uuid}) uuid=ParseUUID() {
         return selector.getResourceManager().getCriteriaBuilder().literal(uuid);
     } |
-    uuidExpr=FieldUUIDExpr(selector) {
+    LOOKAHEAD({getToken(3).kind == CQLParserConstants.null_}) <uuid_denoter> <lpar> <null_> <rpar> {
+                    return selector.getResourceManager().getCriteriaBuilder().nullLiteral(UUID.class);
+    } | uuidExpr=FieldUUIDExpr(selector) {
         return uuidExpr;
     }
 }
@@ -410,8 +415,8 @@ Number ParseNumber(): {
     /* INT */
     t = <integer>
     {
-        return Integer.valueOf(t.image);
-    } |
+    return Long.valueOf(t.image);
+} |
     t = <floatingpoint>
     {
         return Double.valueOf(t.image);
