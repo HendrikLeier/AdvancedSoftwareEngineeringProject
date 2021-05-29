@@ -143,4 +143,12 @@ public class Utils {
             default: throw new ParseException("Order in unreachable state, check parser!");
         }
     }
+
+    public static void processOrder(Expression<?> field, String direction, Order order) throws ParseException {
+        switch (direction) {
+            case "ascending": order.addOrder(field, OrderType.ASCENDING); break;
+            case "descending": order.addOrder(field, OrderType.DESCENDING); break;
+            default: throw new ParseException("Order in unreachable state, check parser!");
+        }
+    }
 }

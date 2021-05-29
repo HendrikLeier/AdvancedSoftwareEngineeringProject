@@ -32,11 +32,13 @@ public class Order {
 
     public void addOrder(String fieldName, OrderType orderType) throws FieldException {
         Expression<?> field = resourceManager.getReferencedField(fieldName);
+        addOrder(field, orderType);
+    }
+
+    public void addOrder(Expression<?> field, OrderType orderType) {
         fields.add(field);
         orderTypes.add(orderType);
     }
-
-
 
 
 }

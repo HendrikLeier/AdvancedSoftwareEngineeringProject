@@ -42,7 +42,7 @@ public class QueryController {
         return new ResponseEntity<>(new ParseExceptionDTO("Encountered an exception while parsing the query!", parseException.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
-    @PostMapping("/testQuery")
+    @PostMapping("/query")
     public List<List<Object>> testQuery(@RequestBody String query) throws ParseException {
         if (!init) {
             new CQLParser(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
@@ -72,6 +72,7 @@ public class QueryController {
         CQLParser.Filter(filter);
         CQLParser.Order(order);
         CQLParser.Group(group);
+        CQLParser.Timebin(group, result, order);
 
         result.finalizeResult();
         filter.finalizeSelector();

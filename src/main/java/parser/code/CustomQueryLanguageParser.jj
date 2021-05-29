@@ -53,6 +53,9 @@ TOKEN : {
     <t_filter: "filter"> |
     <t_group: "groups"> |
     <t_result: "results"> |
+    <t_timebin: "timebins"> |
+    /* bin type */
+    <bin_type: "hour" | "day" | "month" | "year"> |
     /* Arithmetic */
     <plus: "+"> |
     <minus: "-"> |
@@ -498,6 +501,18 @@ void Group(Group group): {
     Token t;
 } {
     (<t_group> (t=<fieldname> {group.addField(t.image);})+ With(group.getWithClauseSelector()))?
+}
+
+void Timebin(Group group, Result result, Order order): {
+    Token fn;
+    Token t;
+    Token t_order;
+}{
+    (<t_timebin> fn=<fieldname> t=<bin_type> (t_order=<ascending>|t_order=<descending>) {
+        Expression<Integer> timeBin = group.timeBin(fn.image, t.image);
+        result.addResultField(timeBin);
+        Utils.processOrder(timeBin, t_order.image, order);
+    })?
 }
 
 void With(WithClauseSelector selector): {
