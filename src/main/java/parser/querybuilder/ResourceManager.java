@@ -32,7 +32,7 @@ public class ResourceManager {
     private final CriteriaBuilder criteriaBuilder;
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
 
-    public Map<FetchReceipt, FetchResolveResult> getSourceCache() {
+    private Map<FetchReceipt, FetchResolveResult> getSourceCache() {
         return sourceCache;
     }
 

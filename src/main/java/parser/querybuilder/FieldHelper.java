@@ -11,13 +11,5 @@ public class FieldHelper {
         return null;
     }
 
-    /** null means I have none */
-    public static ForeignField getForeignField(String fieldName) {
-        for (ForeignField f : ForeignField.values()) {
-            if (f.name().equals(fieldName))
-                return f;
-        }
-        return null;
-    }
 
 }
