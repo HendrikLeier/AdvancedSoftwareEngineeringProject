@@ -11,6 +11,7 @@ import javax.persistence.metamodel.SingularAttribute;
 public enum DataModelField {
     amount(Event_.amount),
     datetime(Event_.localDateTime),
+    id(Event_.eventId),
     name(Event_.name),
     type(Event_.type),
     testBool(Event_.someTestField),

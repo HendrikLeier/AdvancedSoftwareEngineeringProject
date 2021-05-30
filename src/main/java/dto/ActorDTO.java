@@ -1,6 +1,10 @@
 package dto;
 
+import java.util.UUID;
+
 public class ActorDTO {
+
+    private UUID actorId;
 
     private String name;
 
@@ -20,5 +24,13 @@ public class ActorDTO {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public UUID getActorId() {
+        return actorId;
+    }
+
+    public void setActorId(UUID actorId) {
+        this.actorId = actorId;
     }
 }

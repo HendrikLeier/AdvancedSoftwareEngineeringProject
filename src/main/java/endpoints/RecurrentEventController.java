@@ -3,6 +3,7 @@ package endpoints;
 import dto.RecurrentEventDTO;
 import dto.RecurrentEventDTOLean;
 import dto.RecurrentRuleDTO;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -13,11 +14,13 @@ import repository.ActorRepo;
 import repository.RecurrentEventRepo;
 import repository.RecurrentRuleRepo;
 
+import javax.persistence.EntityNotFoundException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("recurrentEvent")
@@ -30,6 +33,9 @@ public class RecurrentEventController {
     private RecurrentRuleRepo recurrentRuleRepo;
 
     @Autowired
+    private ModelMapper modelMapper;
+
+    @Autowired
     private ActorRepo actorRepo;
 
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -39,7 +45,7 @@ public class RecurrentEventController {
     }
 
     @PostMapping("/insert")
-    public ResponseEntity<HttpStatus> generateRecurrentEvent(@RequestBody RecurrentEventDTOLean recurrentEventDTOLean) throws EndpointException {
+    public ResponseEntity<UUID> generateRecurrentEvent(@RequestBody RecurrentEventDTOLean recurrentEventDTOLean) throws EndpointException {
         Optional<Actor> actorOptional = actorRepo.findById(recurrentEventDTOLean.getActorId());
         if(actorOptional.isEmpty()) {
             throw new EndpointException("Actor not found!");
@@ -69,14 +75,43 @@ public class RecurrentEventController {
         }
 
         recurrentEvent.setRule(recurrentRule);
-
         recurrentEvent.setEventList(new HashSet<>());
-
         recurrentRuleRepo.save(recurrentRule);
-
         recurrentEventRepo.save(recurrentEvent);
 
-        return ResponseEntity.ok(HttpStatus.OK);
+        return new ResponseEntity<>(recurrentEvent.getRecurrentEventId(), HttpStatus.OK);
+    }
+
+    @GetMapping("/find/{uuid}")
+    public ResponseEntity<RecurrentEventDTO> getSingle(@PathVariable("uuid") UUID uuid) {
+        RecurrentEvent recurrentEvent;
+        try {
+            recurrentEvent = recurrentEventRepo.getOne(uuid);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(modelMapper.map(recurrentEvent, RecurrentEventDTO.class), HttpStatus.OK);
+    }
+
+    @PutMapping("/update/{uuid}")
+    public ResponseEntity<HttpStatus> updateEvent(@PathVariable("uuid") UUID uuid) {
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    }
+
+    @DeleteMapping("/{uuid}")
+    public ResponseEntity<HttpStatus> deleteRecurrentEvent(@PathVariable("uuid") UUID uuid) {
+        RecurrentEvent recurrentEvent;
+        try {
+            recurrentEvent = recurrentEventRepo.getOne(uuid);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        recurrentRuleRepo.delete(recurrentEvent.getRule());
+        recurrentEventRepo.delete(recurrentEvent);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
 }

@@ -56,14 +56,14 @@ public abstract class LogicSelector {
 
     public <Y extends Comparable<? super Y>> Predicate handleSmallerObj(Expression v1, Expression v2, boolean equal) throws FieldException {
 
-            try {
-                if(!equal)
-                    return resourceManager.getCriteriaBuilder().lessThan(v1, v2);
-                else
-                    return resourceManager.getCriteriaBuilder().lessThanOrEqualTo(v1, v2);
-            } catch (NumberFormatException e) {
-                throw new FieldException("Wrong value format of value "+v1+ " with type "+ v1.getClass().getTypeName() +" for field "+v2 + " with type " + v2.getJavaType().getTypeName());
-            }
+        try {
+            if(!equal)
+                return resourceManager.getCriteriaBuilder().lessThan(v1, v2);
+            else
+                return resourceManager.getCriteriaBuilder().lessThanOrEqualTo(v1, v2);
+        } catch (NumberFormatException e) {
+            throw new FieldException("Wrong value format of value "+v1+ " with type "+ v1.getClass().getTypeName() +" for field "+v2 + " with type " + v2.getJavaType().getTypeName());
+        }
     }
 
     public Predicate handleLike(Expression v1, Expression v2) throws FieldException {

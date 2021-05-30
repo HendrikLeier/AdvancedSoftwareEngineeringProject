@@ -1,6 +1,7 @@
 package dto;
 
 import persisted.EventType;
+import persisted.RecurrentRule;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,6 +14,16 @@ public class RecurrentEventDTO {
     private LocalDateTime endPoint;
 
     private EventType type;
+
+    public RecurrentRule getRecurrentRule() {
+        return recurrentRule;
+    }
+
+    public void setRecurrentRule(RecurrentRule recurrentRule) {
+        this.recurrentRule = recurrentRule;
+    }
+
+    private RecurrentRule recurrentRule;
 
     private String name;
 

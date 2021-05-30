@@ -1,0 +1,56 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Unittests" type="JUnit" factoryName="JUnit">
+    <module name="webapp.test" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="parser.code.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="parser.helper.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="parser.querybuilder.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="context.logic.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="dto.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="endpoints.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="persisted.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="repository.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="webapp.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+      <pattern>
+        <option name="PATTERN" value="config.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <option name="ALTERNATIVE_JRE_PATH" value="openjdk-15" />
+    <option name="PACKAGE_NAME" value="" />
+    <option name="MAIN_CLASS_NAME" value="" />
+    <option name="METHOD_NAME" value="" />
+    <option name="TEST_OBJECT" value="package" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

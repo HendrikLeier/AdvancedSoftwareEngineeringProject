@@ -32,8 +32,17 @@ public class ResourceManager {
     private final CriteriaBuilder criteriaBuilder;
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
 
-    private final Map<FetchReceipt, FetchResolveResult> sourceCache;
+    public Map<FetchReceipt, FetchResolveResult> getSourceCache() {
+        return sourceCache;
+    }
+
+    /* Cannot be final as it ist changed by a test */
+    private Map<FetchReceipt, FetchResolveResult> sourceCache;
     private final Map<FetchReceipt, Expression<?>> fieldCache;
+
+    public void setSourceCache(Map<FetchReceipt, FetchResolveResult> sourceCache) {
+        this.sourceCache = sourceCache;
+    }
 
     /**
      * Type mappings for referenced classes
@@ -138,7 +147,7 @@ public class ResourceManager {
     /**
      * A class which is used to store fetch results
      */
-    private static class FetchResolveResult {
+    public static class FetchResolveResult {
         /**
          * A variable used to store the Join-object which contains the attribute
          */

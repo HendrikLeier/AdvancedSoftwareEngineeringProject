@@ -29,7 +29,7 @@ public class EventControllerDebug {
     private RecurrentEventCreationRepo recurrentEventCreationRepo;
 
     @GetMapping("/insertExamples/{count}")
-    public Map<String, String> generateExampleEntry(@RequestParam boolean withRecurrentParent, @PathVariable int count) {
+    public Map<String, String> generateExampleEntry(@RequestParam boolean withRecurrentParent, @PathVariable("count") int count) {
         Map<String, String> result = new TreeMap<>();
         Random random = new Random();
 

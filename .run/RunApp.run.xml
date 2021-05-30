@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="RunApp" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="webapp.Application" />
+    <module name="webapp.main" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="Gradle.BeforeRunTask" enabled="true" tasks="compileJavacc" externalProjectPath="$PROJECT_DIR$" vmOptions="" scriptParameters="" />
+    </method>
+  </configuration>
+</component>

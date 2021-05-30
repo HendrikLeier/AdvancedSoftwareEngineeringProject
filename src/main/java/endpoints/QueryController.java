@@ -43,7 +43,7 @@ public class QueryController {
     }
 
     @PostMapping("/query")
-    public List<List<Object>> testQuery(@RequestBody String query) throws ParseException {
+    public List<List<Object>> query(@RequestBody String query) throws ParseException {
         if (!init) {
             new CQLParser(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
             init = true;

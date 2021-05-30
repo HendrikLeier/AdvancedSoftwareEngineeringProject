@@ -24,6 +24,9 @@ dependencies {
     // https://mvnrepository.com/artifact/org.modelmapper/modelmapper
     implementation group: 'org.modelmapper', name: 'modelmapper', version: '2.3.8'
     annotationProcessor group: 'org.hibernate', name: 'hibernate-jpamodelgen', version: '5.4.29.Final'
+    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.1.0'
+
 }
 
 compileJavacc {

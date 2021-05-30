@@ -31,17 +31,14 @@ import java.time.LocalDateTime;
  */
 public class CQLParser {
 
-  /** Main entry point.
-  public static void main(String args[]) throws ParseException {
-    CQLParser parser = new CQLParser(System.in);
-
-    Expr expr = parser.FilterLogicOr();
-
-    System.out.println();
-  }*/
-
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
 
+    /**
+     * The parser generator translates Lookaheads into static methods.
+     * When determining the type of a field in a lookahead clause the resourceManager is required.
+     * The only way to solve this issue is with a static reference to the ResourceManager, sadly introducing statefulness.
+     * (the only other place where statefulness can be found is in the ResourceManager itself, with the caches...)
+     */
     public static ResourceManager resourceManager;
 }
 
