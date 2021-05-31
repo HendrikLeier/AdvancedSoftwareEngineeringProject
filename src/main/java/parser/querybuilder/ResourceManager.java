@@ -32,9 +32,6 @@ public class ResourceManager {
     private final CriteriaBuilder criteriaBuilder;
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
 
-    private Map<FetchReceipt, FetchResolveResult> getSourceCache() {
-        return sourceCache;
-    }
 
     /* Cannot be final as it ist changed by a test */
     private Map<FetchReceipt, FetchResolveResult> sourceCache;
@@ -49,14 +46,14 @@ public class ResourceManager {
      * --> Target classes for some types
      */
     private static final HashMap<Class, Class> classClassHashMap = new HashMap<>()
-            {{
-                put(persisted.RecurrentEvent.class, UUID.class);
-                put(EventType.class, String.class);
-                put(Actor.class, UUID.class);
-                put(RecurrentRuleType.class, String.class);
-                put(RecurrentRuleReferencePointType.class, String.class);
-                put(Duration.class, Long.class);
-            }};
+        {{
+            put(persisted.RecurrentEvent.class, UUID.class);
+            put(EventType.class, String.class);
+            put(Actor.class, UUID.class);
+            put(RecurrentRuleType.class, String.class);
+            put(RecurrentRuleReferencePointType.class, String.class);
+            put(Duration.class, Long.class);
+        }};
 
     /**
      * @param field The class to be checked

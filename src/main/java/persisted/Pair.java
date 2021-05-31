@@ -1,7 +1,6 @@
 package persisted;
 
 import javax.persistence.Embeddable;
-import java.io.Serializable;
 
 @Embeddable
 public class Pair {

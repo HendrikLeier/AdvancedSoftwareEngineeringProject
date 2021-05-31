@@ -75,7 +75,7 @@ public class TestArithmeticSelector {
     }
 
     @Test
-    public void testSelectorSumAdd() throws ParseException {
+    void testSelectorSumAdd() throws ParseException {
         arithmeticSelector = new ArithmeticSelector(logicSelector);
         Expression<Number> numberExpression = sumExpressionAdd;
         List<ArithmeticSumExpression> listSumAdd = makeArithmeticSumList(20, "+");
@@ -85,7 +85,7 @@ public class TestArithmeticSelector {
     }
 
     @Test
-    public void testSelectorSumSub() throws ParseException {
+    void testSelectorSumSub() throws ParseException {
         arithmeticSelector = new ArithmeticSelector(logicSelector);
         Expression<Number> numberExpression = sumExpressionSub;
         List<ArithmeticSumExpression> listSumSub = makeArithmeticSumList(20, "-");
@@ -95,7 +95,7 @@ public class TestArithmeticSelector {
     }
 
     @Test
-    public void testSelectorProdMul() throws ParseException {
+    void testSelectorProdMul() throws ParseException {
         arithmeticSelector = new ArithmeticSelector(logicSelector);
         Expression<Number> numberExpression = prodExpressionMul;
         List<ArithmeticProdExpression> listProdMul = makeArithmeticProdList(20, "*");
@@ -105,7 +105,7 @@ public class TestArithmeticSelector {
     }
 
     @Test
-    public void testSelectorProdQuot() throws ParseException {
+    void testSelectorProdQuot() throws ParseException {
         arithmeticSelector = new ArithmeticSelector(logicSelector);
         Expression<Number> numberExpression = prodExpressionQuot;
         List<ArithmeticProdExpression> listProdQuot = makeArithmeticProdList(20, "/");

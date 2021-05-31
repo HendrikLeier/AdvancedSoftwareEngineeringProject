@@ -1,7 +1,6 @@
 package persisted;
 
 import javax.persistence.*;
-import javax.ws.rs.DefaultValue;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

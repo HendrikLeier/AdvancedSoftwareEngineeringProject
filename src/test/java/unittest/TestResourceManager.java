@@ -2,27 +2,18 @@ package unittest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import parser.querybuilder.DataModelField;
 import parser.querybuilder.FetchReceipt;
 import parser.querybuilder.ResourceManager;
 import persisted.Event;
-import persisted.Event_;
-import persisted.RecurrentEvent_;
-import persisted.RecurrentRule_;
 
 import javax.persistence.Tuple;
 import javax.persistence.criteria.*;
 import javax.persistence.metamodel.SingularAttribute;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 public class TestResourceManager {
@@ -62,7 +53,7 @@ public class TestResourceManager {
     }
 
     @Test
-    public void testResolveReceipt() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+    void testResolveReceipt() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         // Jailbreak stuff...
         Method method = ResourceManager.class.getDeclaredMethod("resolveReceipt", FetchReceipt.class);
         method.setAccessible(true);

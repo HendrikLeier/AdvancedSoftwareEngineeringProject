@@ -5,6 +5,7 @@
     <method v="2">
       <option name="Make" enabled="true" />
       <option name="Gradle.BeforeRunTask" enabled="true" tasks="compileJavacc" externalProjectPath="$PROJECT_DIR$" vmOptions="" scriptParameters="" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Unittests" run_configuration_type="JUnit" />
     </method>
   </configuration>
 </component>

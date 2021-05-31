@@ -5,14 +5,12 @@ import dto.RecurrentEventDTOLean;
 import dto.RecurrentRuleDTO;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import persisted.*;
 import repository.ActorRepo;
-import repository.RecurrentEventRepo;
-import repository.RecurrentRuleRepo;
+import repository.RecurrentEventUnificationRepo;
 
 import javax.persistence.EntityNotFoundException;
 import java.time.Duration;
@@ -27,10 +25,7 @@ import java.util.UUID;
 public class RecurrentEventController {
 
     @Autowired
-    private RecurrentEventRepo recurrentEventRepo;
-
-    @Autowired
-    private RecurrentRuleRepo recurrentRuleRepo;
+    private RecurrentEventUnificationRepo recurrentEventRepo;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -76,7 +71,6 @@ public class RecurrentEventController {
 
         recurrentEvent.setRule(recurrentRule);
         recurrentEvent.setEventList(new HashSet<>());
-        recurrentRuleRepo.save(recurrentRule);
         recurrentEventRepo.save(recurrentEvent);
 
         return new ResponseEntity<>(recurrentEvent.getRecurrentEventId(), HttpStatus.OK);
@@ -108,7 +102,6 @@ public class RecurrentEventController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        recurrentRuleRepo.delete(recurrentEvent.getRule());
         recurrentEventRepo.delete(recurrentEvent);
 
         return new ResponseEntity<>(HttpStatus.OK);

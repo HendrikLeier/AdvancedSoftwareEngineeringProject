@@ -13,7 +13,6 @@ import javax.persistence.criteria.Expression;
 
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
@@ -85,7 +84,7 @@ public class TestOrder {
     }
 
     @Test
-    public void testFinalizeOrderSameNumberAsc() throws NoSuchFieldException, IllegalAccessException {
+    void testFinalizeOrderSameNumberAsc() throws NoSuchFieldException, IllegalAccessException {
         final ArgumentCaptor<List<javax.persistence.criteria.Order>> captor = ArgumentCaptor.forClass(List.class);
         // Jailbreak stuff...
         Field fields = getJailbrokenFields();
@@ -108,7 +107,7 @@ public class TestOrder {
     }
 
     @Test
-    public void testFinalizeOrderSameNumberDesc() throws NoSuchFieldException, IllegalAccessException {
+    void testFinalizeOrderSameNumberDesc() throws NoSuchFieldException, IllegalAccessException {
         final ArgumentCaptor<List<javax.persistence.criteria.Order>> captor = ArgumentCaptor.forClass(List.class);
         // Jailbreak stuff...
         Field fields = getJailbrokenFields();
@@ -131,7 +130,7 @@ public class TestOrder {
     }
 
     @Test
-    public void testFinalizeOrderMoreExpressions() throws NoSuchFieldException, IllegalAccessException {
+    void testFinalizeOrderMoreExpressions() throws NoSuchFieldException, IllegalAccessException {
         final ArgumentCaptor<List<javax.persistence.criteria.Order>> captor = ArgumentCaptor.forClass(List.class);
         // Jailbreak stuff...
         Field fields = getJailbrokenFields();
@@ -149,7 +148,7 @@ public class TestOrder {
     }
 
     @Test
-    public void testFinalizeOrderMoreorderTypes() throws NoSuchFieldException, IllegalAccessException {
+    void testFinalizeOrderMoreorderTypes() throws NoSuchFieldException, IllegalAccessException {
         final ArgumentCaptor<List<javax.persistence.criteria.Order>> captor = ArgumentCaptor.forClass(List.class);
         // Jailbreak stuff...
         Field fields = getJailbrokenFields();

@@ -15,7 +15,6 @@ import repository.ActorRepo;
 import repository.EventRepo;
 
 import javax.persistence.EntityNotFoundException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;

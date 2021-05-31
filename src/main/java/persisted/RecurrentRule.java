@@ -4,7 +4,7 @@ import javax.persistence.*;
 import java.time.Duration;
 import java.util.UUID;
 
-// This is a ValueObject
+// This is a ValueObject --> Change this to not have an Identity
 @Entity
 public class RecurrentRule {
 

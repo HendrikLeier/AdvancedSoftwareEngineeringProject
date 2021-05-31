@@ -7,5 +7,5 @@ import persisted.RecurrentEvent;
 import java.util.UUID;
 
 @Repository
-public interface RecurrentEventRepo extends JpaRepository<RecurrentEvent, UUID> {
+interface RecurrentEventRepo extends JpaRepository<RecurrentEvent, UUID> {
 }

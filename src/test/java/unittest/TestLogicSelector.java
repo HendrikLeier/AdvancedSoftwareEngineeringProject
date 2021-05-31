@@ -3,8 +3,6 @@ package unittest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 import parser.generated.ParseException;
 import parser.querybuilder.FieldException;
 import parser.querybuilder.LogicOperator;
@@ -41,10 +39,10 @@ public class TestLogicSelector {
             public void finalizeSelector() {}
 
             @Override
-            public <X> Expression<X> getReferencedFieldOfType(String fieldName, Class<X> type) throws FieldException {return null;}
+            public <X> Expression<X> getReferencedFieldOfType(String fieldName, Class<X> type) {return null;}
 
             @Override
-            public <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) throws FieldException, ParseException {return null;}
+            public <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) {return null;}
         };
 
         predicate1 = mock(Predicate.class);
@@ -67,7 +65,7 @@ public class TestLogicSelector {
 
     @Test
     @DisplayName("test for handlePredicateList for and")
-    public void testHandlePredicateListAnd() {
+    void testHandlePredicateListAnd() {
         List<Predicate> predicates = getNPredicates(100);
 
         Predicate result = logicSelector.handlePredicateList(predicates, LogicOperator.And);
@@ -77,7 +75,7 @@ public class TestLogicSelector {
 
     @Test
     @DisplayName("test for handlePredicateList for or")
-    public void testHandlePredicateListOr() {
+    void testHandlePredicateListOr() {
         List<Predicate> predicates = getNPredicates(100);
 
         Predicate result = logicSelector.handlePredicateList(predicates, LogicOperator.Or);

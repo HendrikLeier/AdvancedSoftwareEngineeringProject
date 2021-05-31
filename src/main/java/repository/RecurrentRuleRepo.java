@@ -7,5 +7,5 @@ import persisted.RecurrentRule;
 import java.util.UUID;
 
 @Repository
-public interface RecurrentRuleRepo extends JpaRepository<RecurrentRule, UUID> {
+interface RecurrentRuleRepo extends JpaRepository<RecurrentRule, UUID> {
 }

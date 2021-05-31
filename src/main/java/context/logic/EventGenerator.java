@@ -10,7 +10,7 @@ import persisted.RecurrentEvent;
 import persisted.RecurrentRuleReferencePointType;
 import persisted.RecurrentRuleType;
 import repository.EventRepo;
-import repository.RecurrentEventRepo;
+import repository.RecurrentEventUnificationRepo;
 
 import javax.transaction.Transactional;
 import java.time.Duration;
@@ -29,7 +29,7 @@ public class EventGenerator {
     private EventRepo eventRepo;
 
     @Autowired
-    private RecurrentEventRepo recurrentEventRepo;
+    private RecurrentEventUnificationRepo recurrentEventRepo;
 
     private static final Logger logger = LoggerFactory.getLogger(EventGenerator.class);
 

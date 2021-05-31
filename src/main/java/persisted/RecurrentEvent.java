@@ -1,5 +1,8 @@
 package persisted;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -16,6 +19,7 @@ public class RecurrentEvent {
     private final UUID recurrentEventId;
 
     @OneToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private RecurrentRule rule;
 
     @Column(nullable = false)

@@ -2,7 +2,6 @@ package parser.querybuilder;
 
 
 import javax.persistence.criteria.Expression;
-import javax.persistence.metamodel.SingularAttribute;
 import java.util.*;
 
 public class Order {

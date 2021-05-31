@@ -1,9 +1,7 @@
 package dto;
 
 import persisted.EventType;
-import persisted.RecurrentRule_;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class RecurrentEventDTOLean {

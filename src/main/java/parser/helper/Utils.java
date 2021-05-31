@@ -16,9 +16,6 @@ import java.util.*;
 
 public class Utils {
 
-    public static void printList(List list) {
-        list.forEach(System.out::println);
-    }
 
     private static DateTimeFormatter dateTimeFormatter;
 
@@ -46,11 +43,11 @@ public class Utils {
 
     public static void convertEscapedCharacter(StringBuilder builder, char c) {
         switch (c) {
-            case 'b': builder.append((char) '\b'); break;
-            case 'f': builder.append((char) '\f'); break;
-            case 'n': builder.append((char) '\n'); break;
-            case 'r': builder.append((char) '\r'); break;
-            case 't': builder.append((char) '\t'); break;
+            case 'b': builder.append('\b'); break;
+            case 'f': builder.append('\f'); break;
+            case 'n': builder.append('\n'); break;
+            case 'r': builder.append('\r'); break;
+            case 't': builder.append('\t'); break;
             default: builder.append(c);
         }
     }
@@ -102,9 +99,7 @@ public class Utils {
     public static Predicate processBinaryComparison(Expression value1, String comparisonOperator, Expression value2, LogicSelector filter) throws ParseException {
         switch (comparisonOperator) {
             case "=": return filter.handleEqualObj(value1, value2);
-            // case ">": return filter.handleGreaterObj(value1, value2, false);
             case "<": return filter.handleSmallerObj(value1, value2, false);
-            // case ">=": return filter.handleGreaterObj(value1, value2, true);
             case "<=": return filter.handleSmallerObj(value1, value2, true);
             case "like": return filter.handleLike(value1, value2);
             case "startswith": return filter.handleStartswith(value1, value2);

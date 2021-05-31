@@ -3,7 +3,6 @@ package persisted;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.UniqueConstraint;
 import java.util.UUID;
 
 @Entity

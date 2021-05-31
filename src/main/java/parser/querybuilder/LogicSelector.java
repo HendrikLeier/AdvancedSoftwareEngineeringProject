@@ -111,5 +111,5 @@ public abstract class LogicSelector {
 
     public abstract <X> Expression<X> getReferencedFieldOfType(String fieldName, Class<X> type) throws FieldException;
 
-    public abstract <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) throws FieldException, ParseException;
+    public abstract <Y> Expression<Number> getAggregateOf(String aggregateName, Expression<Y> field) throws ParseException;
 }

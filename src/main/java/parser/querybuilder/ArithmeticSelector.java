@@ -5,7 +5,6 @@ import parser.helper.ArithmeticSumExpression;
 import parser.helper.ProdType;
 import parser.helper.SumType;
 
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;
 
 import java.util.*;
