@@ -33,12 +33,6 @@ public class RecurrentEventController {
     @Autowired
     private ActorRepo actorRepo;
 
-    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
-    private LocalDateTime parseLocalDateTime(String dateTime) {
-        return LocalDateTime.parse(dateTime, dateFormatter);
-    }
-
     @PostMapping("/insert")
     public ResponseEntity<UUID> generateRecurrentEvent(@RequestBody RecurrentEventDTOLean recurrentEventDTOLean) throws EndpointException {
         Optional<Actor> actorOptional = actorRepo.findById(recurrentEventDTOLean.getActorId());
@@ -50,11 +44,11 @@ public class RecurrentEventController {
 
         RecurrentEvent recurrentEvent = new RecurrentEvent();
         recurrentEvent.setActor(actor);
-        recurrentEvent.setStartPoint(parseLocalDateTime(recurrentEventDTOLean.getStartPoint()));
+        recurrentEvent.setStartPoint(DateFormatterHelper.parseLocalDateTime(recurrentEventDTOLean.getStartPoint()));
         recurrentEvent.setType(recurrentEventDTOLean.getType());
         recurrentEvent.setAmount(recurrentEventDTOLean.getAmount());
         recurrentEvent.setName(recurrentEventDTOLean.getName());
-        recurrentEvent.setEndPoint(parseLocalDateTime(recurrentEventDTOLean.getEndPoint()));
+        recurrentEvent.setEndPoint(DateFormatterHelper.parseLocalDateTime(recurrentEventDTOLean.getEndPoint()));
 
         RecurrentRuleDTO recurrentRuleDTO = recurrentEventDTOLean.getRecurrentRuleDTO();
         Duration ruleInterval = Duration.parse(recurrentRuleDTO.getInterval());

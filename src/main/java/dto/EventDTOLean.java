@@ -11,7 +11,7 @@ public class EventDTOLean {
 
     private String name;
 
-    private LocalDateTime localDateTime;
+    private String localDateTime;
 
     private EventType type;
 
@@ -27,11 +27,11 @@ public class EventDTOLean {
         this.name = name;
     }
 
-    public LocalDateTime getLocalDateTime() {
+    public String getLocalDateTime() {
         return localDateTime;
     }
 
-    public void setLocalDateTime(LocalDateTime localDateTime) {
+    public void setLocalDateTime(String localDateTime) {
         this.localDateTime = localDateTime;
     }
 

@@ -51,7 +51,7 @@ public class EventController {
         event.setActor(actor);
         event.setEventType(eventDTO.getType());
         event.setRecurrentParent(null);
-        event.setLocalDateTime(eventDTO.getLocalDateTime());
+        event.setLocalDateTime(DateFormatterHelper.parseLocalDateTime(eventDTO.getLocalDateTime()));
 
         eventRepo.save(event);
 
@@ -73,7 +73,7 @@ public class EventController {
         event.setActor(actor);
         event.setEventType(eventDTO.getType());
         event.setRecurrentParent(null);
-        event.setLocalDateTime(eventDTO.getLocalDateTime());
+        event.setLocalDateTime(DateFormatterHelper.parseLocalDateTime(eventDTO.getLocalDateTime()));
 
         eventRepo.save(event);
 

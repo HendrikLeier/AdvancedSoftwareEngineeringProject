@@ -23,10 +23,10 @@
             <property name="hibernate.use_sql_comments" value="true" />
 
             <!-- Drop and re-create the database schema on startup -->
-            <property name="javax.persistence.schema-generation.database.action" value="drop-and-create" />
+            <property name="javax.persistence.schema-generation.database.action" value="update" />
             <!-- Use only classes specified in MAPPINGS -->
             <property name="hibernate.archive.autodetection" value="none" />
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <property name="hibernate.hbm2ddl.auto" value="none"/>
         </properties>
     </persistence-unit>
 </persistence>
