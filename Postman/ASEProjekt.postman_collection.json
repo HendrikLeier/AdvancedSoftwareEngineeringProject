@@ -12,7 +12,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "results count(id) filter "
+					"raw": "results id recurrentRuleInterval order id descending"
 				},
 				"url": {
 					"raw": "http://localhost:8080/query/query",
