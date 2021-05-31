@@ -18,6 +18,8 @@ public enum DataModelField {
     actorId(Event_.actor, new FetchReceipt(Actor_.actorId)),
     actorName(Event_.actor, new FetchReceipt(Actor_.name)),
     actorDescription(Event_.actor, new FetchReceipt(Actor_.description)),
+    recurrentEventId(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.recurrentEventId)),
+    recurrentEventName(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.name)),
     recurrentRuleType(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.type)),
     recurrentRuleId(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.ruleUUID)),
     recurrentRuleReferencePoint(Event_.recurrentParent, new FetchReceipt(RecurrentEvent_.rule, RecurrentRule_.referencePointType)),

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import parser.generated.CQLParser;
 import parser.generated.ParseException;
+import parser.helper.CQLParserSingleton;
 import parser.querybuilder.*;
 import persisted.Event;
 
@@ -27,8 +28,6 @@ public class QueryController {
     @Autowired
     private EntityManager entityManager;
 
-    private CQLParser cqlParser = null;
-
     @Autowired
     private ModelMapper modelMapper;
 
@@ -39,11 +38,7 @@ public class QueryController {
 
     @PostMapping("/query")
     public List<List<Object>> query(@RequestBody String query) throws ParseException {
-        if (cqlParser == null) {
-            cqlParser = new CQLParser(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
-        } else {
-            CQLParser.ReInit(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
-        }
+        CQLParser cqlParser = CQLParserSingleton.getCqlParser(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
 
         CriteriaQuery<Tuple> criteriaQuery = entityManager.getCriteriaBuilder().createTupleQuery();
         Root<Event> eventRoot = criteriaQuery.from(Event.class);
