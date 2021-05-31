@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  main:
+    build: .
+    ports:
+      - "8080:8080"
+  db:
+    build: database/.
+    volumes:
+    - ./database/postgres_data:/var/lib/postgresql/data

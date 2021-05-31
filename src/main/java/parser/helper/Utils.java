@@ -18,7 +18,7 @@ public class Utils {
 
 
     private static DateTimeFormatter dateTimeFormatter;
-    
+
     public static void convertEscapedCharacter(StringBuilder builder, char c) {
         switch (c) {
             case 'b': builder.append('\b'); break;

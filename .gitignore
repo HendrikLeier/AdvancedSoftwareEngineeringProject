@@ -28,7 +28,6 @@ hs_err_pid*
 .gradle
 
 # DB files
-database/postgres_data
 
 # builds
 build
