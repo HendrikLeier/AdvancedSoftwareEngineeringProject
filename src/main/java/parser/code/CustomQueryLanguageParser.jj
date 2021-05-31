@@ -18,7 +18,7 @@ options {
 PARSER_BEGIN(CQLParser)
 package parser.generated;
 
-import java.math.BigInteger;import java.util.*;
+import java.util.*;
 import parser.helper.*;
 import parser.querybuilder.*;
 import javax.persistence.criteria.Expression ;import javax.persistence.criteria.Predicate;
@@ -26,9 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import parser.querybuilder.ResourceManager;
 import java.time.LocalDateTime;
-/**
- * Simple brace matcher.
- */
+
 public class CQLParser {
 
     private final Logger logger = LoggerFactory.getLogger(ResourceManager.class);
@@ -40,6 +38,39 @@ public class CQLParser {
      * (the only other place where statefulness can be found is in the ResourceManager itself, with the caches...)
      */
     public static ResourceManager resourceManager;
+
+    private CQLFactory cqlFactory = null;
+
+    public void setCQLFactory(CQLFactory cqlFactory) {
+        this.cqlFactory = cqlFactory;
+    }
+
+    private Result result = null;
+
+    public Result getResult() {
+        return result;
+    }
+
+    public void doParsing() throws ParseException {
+        if(cqlFactory == null) {
+            throw new ParseException("CQL Factory not set!");
+        }
+        CQLParser.resourceManager = cqlFactory.getResourceManager();
+        result = cqlFactory.makeResult();
+        CQLParser.Result(result, cqlFactory.makeResultField());
+        LogicSelector filter = cqlFactory.makeLogicSelector(1);
+        CQLParser.Filter(filter);
+        Order order = cqlFactory.makeOrder();
+        CQLParser.Order(order);
+        Group group = cqlFactory.makeGroup();
+        CQLParser.Group(group);
+        CQLParser.Timebin(group, result, order);
+
+        result.finalizeResult();
+        filter.finalizeSelector();
+        order.finalizeOrder();
+        group.finalizeGroup();
+    }
 }
 
 PARSER_END(CQLParser)
@@ -119,10 +150,10 @@ SKIP : {
 
 /** TODO: Use generics (refactor to new JavaCC version...) */
 
-void Filter(FilterSelector selector) : {
+void Filter(LogicSelector selector) : {
     Predicate predicate;
 }{
-    (<t_filter> predicate=SelectorLogicOr(selector) {selector.setFilterPredicate(predicate);})?
+    (<t_filter> predicate=SelectorLogicOr(selector) {selector.setSelectorPredicate(predicate);})?
 }
 
 Predicate SelectorLogicOr(LogicSelector selector):
@@ -497,7 +528,7 @@ void Result(Result result, ResultField resultField): {
 void Group(Group group): {
     Token t;
 } {
-    (<t_group> (t=<fieldname> {group.addField(t.image);})+ With(group.getWithClauseSelector()))?
+    (<t_group> (t=<fieldname> {group.addField(t.image);})+ With(group.getLogicSelector()))?
 }
 
 void Timebin(Group group, Result result, Order order): {
@@ -512,9 +543,9 @@ void Timebin(Group group, Result result, Order order): {
     })?
 }
 
-void With(WithClauseSelector selector): {
+void With(LogicSelector selector): {
     Predicate predicate;
 } {
-    (<with> predicate=SelectorLogicOr(selector) {selector.setWithPredicate(predicate);})?
+    (<with> predicate=SelectorLogicOr(selector) {selector.setSelectorPredicate(predicate);})?
 }
 

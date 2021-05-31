@@ -27,7 +27,7 @@ public class QueryController {
     @Autowired
     private EntityManager entityManager;
 
-    private boolean init = false;
+    private CQLParser cqlParser = null;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -39,9 +39,8 @@ public class QueryController {
 
     @PostMapping("/query")
     public List<List<Object>> query(@RequestBody String query) throws ParseException {
-        if (!init) {
-            new CQLParser(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
-            init = true;
+        if (cqlParser == null) {
+            cqlParser = new CQLParser(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
         } else {
             CQLParser.ReInit(new ByteArrayInputStream(query.getBytes(StandardCharsets.UTF_8)));
         }
@@ -49,40 +48,20 @@ public class QueryController {
         CriteriaQuery<Tuple> criteriaQuery = entityManager.getCriteriaBuilder().createTupleQuery();
         Root<Event> eventRoot = criteriaQuery.from(Event.class);
 
+        // Reset Ressource Manager and Factory
         ResourceManager resourceManager = new ResourceManager(eventRoot, criteriaQuery, entityManager.getCriteriaBuilder());
-
-        FilterSelector filter = new FilterSelector(resourceManager);
-
-        Order order = new Order(resourceManager);
-
-        Result result = new Result(resourceManager);
-
-        ResultField resultField = new ResultField(resourceManager);
-
-        Group group = new Group(resourceManager);
-
-        CQLParser.resourceManager = resourceManager;
-
-        CQLParser.Result(result, resultField);
-        CQLParser.Filter(filter);
-        CQLParser.Order(order);
-        CQLParser.Group(group);
-        CQLParser.Timebin(group, result, order);
-
-        result.finalizeResult();
-        filter.finalizeSelector();
-        order.finalizeOrder();
-        group.finalizeGroup();
+        CQLFactory cqlFactory = new CQLFactory(resourceManager);
+        cqlParser.setCQLFactory(cqlFactory);
+        cqlParser.doParsing();
 
         TypedQuery<Tuple> eventQuery = entityManager.createQuery(resourceManager.getCriteriaQuery());
 
         List<Tuple> events = eventQuery.getResultList();
-
         List<List<Object>> resultTable = new LinkedList<>();
 
         for (Tuple t : events) {
             List<Object> objects = new LinkedList<>();
-            for (int i = 0; i < result.getResults().size(); i++) {
+            for (int i = 0; i < cqlParser.getResult().getResults().size(); i++) {
                 objects.add(t.get(i));
             }
             resultTable.add(objects);

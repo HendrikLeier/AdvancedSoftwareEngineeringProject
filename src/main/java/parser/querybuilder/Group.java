@@ -12,9 +12,9 @@ public class Group {
 
     private final List<Expression<?>> groups;
 
-    private final WithClauseSelector withClauseSelector;
+    private final LogicSelector withClauseSelector;
 
-    public WithClauseSelector getWithClauseSelector() {
+    public LogicSelector getLogicSelector() {
         return withClauseSelector;
     }
 
@@ -22,6 +22,12 @@ public class Group {
         this.resourceManager = resourceManager;
         this.groups = new LinkedList<>();
         this.withClauseSelector = new WithClauseSelector(resourceManager);
+    }
+
+    public Group(ResourceManager resourceManager, LogicSelector withClauseSelector) {
+        this.resourceManager = resourceManager;
+        this.groups = new LinkedList<>();
+        this.withClauseSelector = withClauseSelector;
     }
 
     public void addField(String fieldName) throws FieldException {

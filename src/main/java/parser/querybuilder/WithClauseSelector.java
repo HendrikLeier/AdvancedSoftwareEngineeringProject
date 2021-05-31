@@ -41,8 +41,4 @@ public class WithClauseSelector extends LogicSelector {
         }
     }
 
-    public void setWithPredicate(Predicate predicate) {
-        this.setSelectorPredicate(predicate);
-    }
-
 }
