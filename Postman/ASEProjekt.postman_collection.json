@@ -1,0 +1,160 @@
+{
+	"info": {
+		"_postman_id": "38107d2e-f592-4d61-8242-e4b01a95f6c8",
+		"name": "ASEProjekt",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "TestQuery",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "results count(id) filter "
+				},
+				"url": {
+					"raw": "http://localhost:8080/query/query",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"query",
+						"query"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getAllEvents",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/event/findall",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"event",
+						"findall"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Actor",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Spieleautomat2\",\n    \"description\": \"In Lele's Küche\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/actor/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"actor",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create RecurrentEvent",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"type\": \"revenue\",\n    \"startPoint\": \"2018-05-28 11:30\",\n    \"endPoint\": \"2021-09-01 00:00\",\n    \"name\": \"lotto\",\n    \"amount\": 20.00,\n    \"actorId\": \"55353ff1-bd90-4d6d-8061-9af1b4484f1e\",\n    \"recurrentRuleDTO\": {\n        \"type\": \"beginBased\",\n        \"referencePointType\": \"day\",\n        \"interval\": \"PT16H00M\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/recurrentEvent/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"recurrentEvent",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Event",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/event/0d7e7cf9-1bf2-4b48-9d92-a29647173382",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"event",
+						"0d7e7cf9-1bf2-4b48-9d92-a29647173382"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Event",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"lotto gewonnen\",\n    \"localDateTime\": \"2021-05-28 11:30\",\n    \"type\": \"revenue\",\n    \"amount\": 1000000.0,\n    \"actor\": \"374cdf2e-2e37-4648-9442-33c93ce4ca35\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/event/insert",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"event",
+						"insert"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
